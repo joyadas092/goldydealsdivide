@@ -93,8 +93,8 @@ async def send(id, message):
     Promo = InlineKeyboardMarkup(
         [
          [InlineKeyboardButton("Main Channel 🛒", url="https://t.me/deals_by_divya"),
-          InlineKeyboardButton("WhatsApp 💬", url="https://t.me/+rTx5B9g6XYxmNmE1")],
-         [InlineKeyboardButton("Join All ", url="https://t.me/Deals_and_Discounts_Channel2/13")]
+          InlineKeyboardButton("WhatsApp 💬", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")],
+         [InlineKeyboardButton("Join All ", url="https://t.me/addlist/xZGBmFeXGXs4NWU1")]
          ])
 
     if message.photo:
