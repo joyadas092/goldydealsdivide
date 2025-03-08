@@ -108,7 +108,7 @@ async def send(id, message):
 
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={unshorten_url(url)}>Buy Now</a></b>')
-            await app.send_photo(chat_id=id, photo=message.photo.file_id, caption=f'<b>{Newtext}</b>',
+            await app.send_photo(chat_id=id, photo=message.photo.file_id, caption=f'<b>{Newtext}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/xZGBmFeXGXs4NWU1'>Click HERE to Join</a></b>",
                                  reply_markup=Promo)
         elif 'wishlink' in message.caption:
 
@@ -130,7 +130,7 @@ async def send(id, message):
 
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={unshorten_url(url)}>Buy Now</a></b>')
-            await app.send_message(chat_id=id, text=f'<b>{Newtext}</b>', disable_web_page_preview=True)
+            await app.send_message(chat_id=id, text=f'<b>{Newtext}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/xZGBmFeXGXs4NWU1'>Click HERE to Join</a></b>", disable_web_page_preview=True)
         elif 'wishlink' in message.text:
             text = message.text
             Newtext = tinycovert(text)
