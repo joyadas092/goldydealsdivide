@@ -94,7 +94,7 @@ async def send(id, message):
         [
          [InlineKeyboardButton("Main Channel 🛒", url="https://t.me/deals_by_divya"),
           InlineKeyboardButton("WhatsApp 💬", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")],
-         [InlineKeyboardButton("All Links ", url="https://t.me/deals_by_divya/42561")]
+         [InlineKeyboardButton("Loot All Deals 🏠", url="https://t.me/divyadeals2/4")]
          ])
 
     if message.photo:
@@ -108,16 +108,16 @@ async def send(id, message):
 
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={unshorten_url(url)}>Buy Now</a></b>')
-            await app.send_photo(chat_id=id, photo=message.photo.file_id, caption=f'<b>{Newtext}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/xZGBmFeXGXs4NWU1'>Click HERE to Join</a></b>",
+            await app.send_photo(chat_id=id, photo=message.photo.file_id, caption=f'<b>{Newtext}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a></b>",
                                  reply_markup=Promo)
         elif 'wishlink' in message.caption:
 
             text = message.caption
             Newtext = tinycovert(text)
-            await app.send_photo(chat_id=id, photo=message.photo.file_id, caption=f'<b>{Newtext}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/xZGBmFeXGXs4NWU1'>Click HERE to Join</a></b>",
+            await app.send_photo(chat_id=id, photo=message.photo.file_id, caption=f'<b>{Newtext}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a></b>",
                                  reply_markup=Promo)
         else:
-            await app.send_photo(chat_id=id, photo=message.photo.file_id, caption=f'<b>{message.caption}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/xZGBmFeXGXs4NWU1'>Click HERE to Join</a></b>",
+            await app.send_photo(chat_id=id, photo=message.photo.file_id, caption=f'<b>{message.caption}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a></b>",
                                  reply_markup=Promo)
 
 
@@ -130,13 +130,13 @@ async def send(id, message):
 
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={unshorten_url(url)}>Buy Now</a></b>')
-            await app.send_message(chat_id=id, text=f'<b>{Newtext}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/xZGBmFeXGXs4NWU1'>Click HERE to Join</a></b>", disable_web_page_preview=True)
+            await app.send_message(chat_id=id, text=f'<b>{Newtext}</b>'+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a></b>", disable_web_page_preview=True)
         elif 'wishlink' in message.text:
             text = message.text
             Newtext = tinycovert(text)
-            await app.send_message(chat_id=id, text=f"<b>{Newtext}</b>"+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/xZGBmFeXGXs4NWU1'>Click HERE to Join</a></b>", disable_web_page_preview=True)
+            await app.send_message(chat_id=id, text=f"<b>{Newtext}</b>"+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a></b>", disable_web_page_preview=True)
         else:
-            await app.send_message(chat_id=id, text=f"<b>{message.text}</b>"+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/xZGBmFeXGXs4NWU1'>Click HERE to Join</a></b>", disable_web_page_preview=True)
+            await app.send_message(chat_id=id, text=f"<b>{message.text}</b>"+"\n\n<b>More Deals! 👉 : <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a></b>", disable_web_page_preview=True)
 
 
 @bot.route('/')
