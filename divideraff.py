@@ -94,7 +94,7 @@ async def send(id, message):
         [
          [InlineKeyboardButton("Main Channel 🛒", url="https://t.me/deals_by_divya"),
           InlineKeyboardButton("WhatsApp 💬", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")],
-         [InlineKeyboardButton("Loot All Deals 🏠", url="https://t.me/divyadeals2/4")]
+         [InlineKeyboardButton("Loot All Deals 🏠", url="https://t.me/divyadeals2/6")]
          ])
 
     if message.photo:
