@@ -30,7 +30,7 @@ bot = Quart(__name__)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-source_channel_id = [-1002110764294]  # Replace with the source channel ID
+source_channel_id = [-1002365489797]  # Replace with the source channel ID
 amazon_id = -1002385099278
 flipkart_id = -1002347373294
 meesho_id = -1002466670728
