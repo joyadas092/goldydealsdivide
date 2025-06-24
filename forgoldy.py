@@ -4,7 +4,7 @@ from io import BytesIO
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
-from playwright.async_api import async_playwright
+# from playwright.async_api import async_playwright
 from pyrogram import Client, filters, enums
 from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
 import logging
@@ -13,7 +13,7 @@ import re
 import asyncio
 from quart import Quart
 from unshortenit import UnshortenIt
-from playwright.sync_api import sync_playwright
+# from playwright.sync_api import sync_playwright
 import os
 from dotenv import load_dotenv
 
