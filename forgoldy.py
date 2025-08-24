@@ -185,7 +185,24 @@ def add_banner_to_image(image, text):
 
     return combined_image
 
+def compilehyperlink(message):
+    text = message.caption if message.caption else message.text
+    inputvalue = text
+    hyperlinkurl = []
+    entities = message.caption_entities if message.caption else message.entities
+    for entity in entities:
+        # new_entities.append(entity)
+        if entity.url is not None:
+            hyperlinkurl.append(entity.url)
+    pattern = re.compile(r'Buy Now')
 
+    inputvalue = pattern.sub(lambda x: hyperlinkurl.pop(0), inputvalue).replace('Regular Price', 'MRP')
+    if "😱 Deal Time" in inputvalue:
+        # Remove the part
+        inputvalue = removedup(inputvalue)
+        inputvalue = (inputvalue.split("😱 Deal Time")[0]).strip()
+    return inputvalue
+  
 async def send(id, message):
     Promo = InlineKeyboardMarkup(
         [[InlineKeyboardButton("🏠 Main Channel", url="https://t.me/deals_by_divya"),
@@ -196,7 +213,7 @@ async def send(id, message):
 
     if message.photo:
         try:
-            modifiedtxt = (message.caption).replace('@under_99_loot_deals', '@shopsy_meesho_Deals')
+            modifiedtxt = compilehyperlink(message).replace('@under_99_loot_deals', '@shopsy_meesho_Deals')
 
             # with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             #     await message.download(file_name=temp_file.name)
@@ -222,18 +239,18 @@ async def send(id, message):
             # image_bytes.seek(0)
 
             # Modify caption with "Buy Now" links
-            if 'tinyurl' in message.caption or 'amazon' in message.caption:
+            if 'tinyurl' in modifiedtxt or 'amazon' in modifiedtxt:
                 # print('amzn working')
-                urls = extract_link_from_text2(message.caption)
+                urls = extract_link_from_text2(modifiedtxt)
                 Newtext = modifiedtxt
                 for url in urls:
                     Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
                 await app.send_photo(chat_id=id, photo=message.photo.file_id,
-                                     caption=f'<b>{Newtext}</b>' + "\n\n<b>🛍️ More Deals! 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a> 👈</b>",
+                                     caption=f'<b>{Newtext}</b>' + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a> 👈</b>",
                                      reply_markup=Promo)
             else:
                 await app.send_photo(chat_id=id, photo=message.photo.file_id,
-                                     caption=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️ More Deals! 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a> 👈</b>",
+                                     caption=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a> 👈</b>",
                                      reply_markup=Promo)
 
         except Exception as e:
@@ -242,22 +259,20 @@ async def send(id, message):
 
 
     elif message.text:
-        modifiedtxt=(message.text).replace('@under_99_loot_deals', '@shopsy_meesho_Deals')
-        if 'tinyurl' in message.text or 'amazon' in message.text:
-            urls = extract_link_from_text2(message.text)
+        modifiedtxt=compilehyperlink(message).replace('@under_99_loot_deals', '@shopsy_meesho_Deals')
+        if 'tinyurl' in modifiedtxt or 'amazon' in modifiedtxt:
+            urls = extract_link_from_text2(modifiedtxt)
             Newtext = modifiedtxt
 
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
             await app.send_message(chat_id=id,
-                                   text=f'<b>{Newtext}</b>' + "\n\n<b>🛍️ More Deals! 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a> 👈</b>",
+                                   text=f'<b>{Newtext}</b>' + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a> 👈</b>",
                                    disable_web_page_preview=True)
         else:
             await app.send_message(chat_id=id,
-                                   text=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️ More Deals! 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a> 👈</b>",
+                                   text=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️  👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE to Join</a> 👈</b>",
                                    disable_web_page_preview=True)
-
-
 @bot.route('/')
 async def hello():
     return 'Hello, world!'
@@ -326,3 +341,4 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
