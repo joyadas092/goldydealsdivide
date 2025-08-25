@@ -282,45 +282,69 @@ async def hello():
 async def start(client, message):
     await app.send_message(message.chat.id, "ahaann")
 
+################forward on off#################################################################
+global forward
+forward = True
+@app.on_message(filters.command('forward') & filters.user(5886397642))
+async def forwardtochannel(app, message):
+    await message.reply(text='Forward Status', reply_markup=InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Turn ON", callback_data='forward on')],
+         [InlineKeyboardButton("Turn Off", callback_data='forward off')]])
+                        )
+forward_off = InlineKeyboardMarkup(
+    [[InlineKeyboardButton("Turn Off", callback_data='forward off')]])
+forward_on = InlineKeyboardMarkup(
+    [[InlineKeyboardButton("Turn ON", callback_data='forward on')]])
+@app.on_callback_query()
+async def callback_query(app, CallbackQuery):
+    global forward
+    if CallbackQuery.data == 'forward off':
+        await CallbackQuery.edit_message_text('Forward to Channel Status turned Off', reply_markup=forward_on)
+        forward = False
+    elif CallbackQuery.data == 'forward on':
+        await CallbackQuery.edit_message_text('Forward to Channel Status turned On', reply_markup=forward_off)
+        forward = True
+########################################################################################
 
 @app.on_message(filters.chat(source_channel_id))
 async def forward_message(client, message):
-    inputvalue = ''
-    if message.caption_entities:
-        for entity in message.caption_entities:
-            if entity.url is not None:
-                inputvalue = entity.url
-        # print(hyerlinkurl)
-        if inputvalue == '':
-            text = message.caption if message.caption else message.text
-            inputvalue = text
-
-    if message.entities:
-        for entity in message.entities:
-            if entity.url is not None:
-                inputvalue = entity.url
-        # print(hyerlinkurl)
-        if inputvalue == '':
-            text = message.text
-            inputvalue = text
-
-    if any(keyword in inputvalue for keyword in shortnerfound):
-        # print(extract_link_from_text(inputvalue))
-        # inputvalue= unshorten_url(extract_link_from_text(inputvalue))
-        unshortened_urls = {}
-        urls = extract_link_from_text2(inputvalue)
-        for url in urls:
-            # if 'extp' in url or 'bitli' in url:
-            unshortened_urls[url] = unshorten_url2(url)
-            # else:
-                # unshortened_urls[url] = await unshorten_url(url)
-
-        for original_url, unshortened_url in unshortened_urls.items():
-            inputvalue = inputvalue.replace(original_url, unshortened_url)
-
-    for keywords, chat_id in keyword_to_chat_id.items():
-        if any(keyword in inputvalue for keyword in keywords):
-            await send(chat_id, message)
+    if forward == True:
+        inputvalue = ''
+        if message.caption_entities:
+            for entity in message.caption_entities:
+                if entity.url is not None:
+                    inputvalue = entity.url
+            # print(hyerlinkurl)
+            if inputvalue == '':
+                text = message.caption if message.caption else message.text
+                inputvalue = text
+    
+        if message.entities:
+            for entity in message.entities:
+                if entity.url is not None:
+                    inputvalue = entity.url
+            # print(hyerlinkurl)
+            if inputvalue == '':
+                text = message.text
+                inputvalue = text
+    
+        if any(keyword in inputvalue for keyword in shortnerfound):
+            # print(extract_link_from_text(inputvalue))
+            # inputvalue= unshorten_url(extract_link_from_text(inputvalue))
+            unshortened_urls = {}
+            urls = extract_link_from_text2(inputvalue)
+            for url in urls:
+                # if 'extp' in url or 'bitli' in url:
+                unshortened_urls[url] = unshorten_url2(url)
+                # else:
+                    # unshortened_urls[url] = await unshorten_url(url)
+    
+            for original_url, unshortened_url in unshortened_urls.items():
+                inputvalue = inputvalue.replace(original_url, unshortened_url)
+    
+        for keywords, chat_id in keyword_to_chat_id.items():
+            if any(keyword in inputvalue for keyword in keywords):
+                await send(chat_id, message)
 
 
 
@@ -341,4 +365,5 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
