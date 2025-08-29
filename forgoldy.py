@@ -205,7 +205,7 @@ def compilehyperlink(message):
   
 async def send(id, message):
     Promo = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🏠 Main Channel", url="https://t.me/deals_by_divya"),
+        [[InlineKeyboardButton("🏠 Main Channel", url="https://t.me/+EUkke-EZOcMxMGE1"),
           InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")],
          [
           InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/divyadeals2/6")]
@@ -365,6 +365,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
 
 
