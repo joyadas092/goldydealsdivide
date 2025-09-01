@@ -204,12 +204,11 @@ def compilehyperlink(message):
     return inputvalue
   
 async def send(id, message):
+    #https://t.me/+EUkke-EZOcMxMGE1
     Promo = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🏠 Main Channel", url="https://t.me/+EUkke-EZOcMxMGE1"),
-          InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")],
-         [
-          InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/divyadeals2/6")]
-         ])
+        [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/divyadeals2/6"),
+          InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")]
+       )
 
     if message.photo:
         try:
@@ -246,11 +245,11 @@ async def send(id, message):
                 for url in urls:
                     Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
                 await app.send_photo(chat_id=id, photo=message.photo.file_id,
-                                     caption=f'<b>{Newtext}</b>' + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                     caption=f'<b>{Newtext}</b>' + "<b><i>\n\nJoin ➡️ @BBD_Deals for Big Billion LootDeals\n\n<\i><\b>\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                      reply_markup=Promo)
             else:
                 await app.send_photo(chat_id=id, photo=message.photo.file_id,
-                                     caption=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                     caption=f'<b>{modifiedtxt}</b>' + "<b><i>\n\nJoin ➡️ @BBD_Deals for Big Billion LootDeals\n\n<\i><\b>\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                      reply_markup=Promo)
 
         except Exception as e:
@@ -267,11 +266,11 @@ async def send(id, message):
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
             await app.send_message(chat_id=id,
-                                   text=f'<b>{Newtext}</b>' + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                   text=f'<b>{Newtext}</b>' + "<b><i>\n\nJoin ➡️ @BBD_Deals for Big Billion LootDeals\n\n<\i><\b><b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                    disable_web_page_preview=True)
         else:
             await app.send_message(chat_id=id,
-                                   text=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️  👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                   text=f'<b>{modifiedtxt}</b>' + "\n\nJoin ➡️ @BBD_Deals for Big Billion LootDeals\n\n<b>🛍️  👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                    disable_web_page_preview=True)
 @bot.route('/')
 async def hello():
@@ -365,6 +364,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
 
 
