@@ -266,11 +266,11 @@ async def send(id, message):
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
             await app.send_message(chat_id=id,
-                                   text=f'<b>{Newtext}</b>' + "\n\n<b><i>Join ➡️ @BBD_Deals for Big Billion LootDeals</i></b>"+"\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                   text=f'<b>{Newtext}</b>',
                                    disable_web_page_preview=True)
         else:
             await app.send_message(chat_id=id,
-                                   text=f'<b>{modifiedtxt}</b>' + "\n\n<b><i>Join ➡️ @BBD_Deals for Big Billion LootDeals</i></b>"+"\n\n<b>🛍️  👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                   text=f'<b>{modifiedtxt}</b>',
                                    disable_web_page_preview=True)
 @bot.route('/')
 async def hello():
@@ -364,6 +364,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
 
 
