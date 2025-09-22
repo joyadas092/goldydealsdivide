@@ -245,11 +245,11 @@ async def send(id, message):
                 for url in urls:
                     Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
                 await app.send_photo(chat_id=id, photo=message.photo.file_id,
-                                     caption=f'<b>{Newtext}</b>' + "\n\n<b><i>Join ➡️ @BBD_Deals for Big Billion LootDeals</i></b>"+"\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                     caption=f'<b>{Newtext}</b>' + "\n\n<b><i>Join ➡️ @All_Flipkart_Deals for Big Billion LootDeals</i></b>"+"\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                      reply_markup=Promo)
             else:
                 await app.send_photo(chat_id=id, photo=message.photo.file_id,
-                                     caption=f'<b>{modifiedtxt}</b>' + "\n\n<b><i>Join ➡️ @BBD_Deals for Big Billion LootDeals</i></b>"+"\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                     caption=f'<b>{modifiedtxt}</b>' + "\n\n<b><i>Join ➡️ @All_Flipkart_Deals for Big Billion LootDeals</i></b>"+"\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                      reply_markup=Promo)
 
         except Exception as e:
@@ -364,6 +364,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
 
 
