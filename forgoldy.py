@@ -221,7 +221,7 @@ def should_notify(chat_id: int) -> bool:
 async def send(id, message):
     # https://t.me/+EUkke-EZOcMxMGE1
     Promo = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/divyadeals2/6"),
+        [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
           InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")]]
     )
     notify = should_notify(id)   # ✅ Added line
@@ -400,6 +400,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
 
 
