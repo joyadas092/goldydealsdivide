@@ -35,9 +35,12 @@ amazon_id = -1002385099278
 flipkart_id = -1002347373294
 meesho_id = -1002466670728
 ajiomyntra_id = -1002410844336
+zepto_id= -1003059572977
 # cc_id = -1002078634799
 # beauty_id = -1002046497963
 
+zepto_keywords=['jiomart','Amazon Fresh','blinkit','zepto','swiggy','bigbasket','Instamart','Flipkart minutes','instamart','Blinkit',
+                'Zepto','Swiggy','flipkart minutes','minutes loot']
 amazon_keywords = ['amzn', 'amazon', 'tinyurl']
 flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt']
 meesho_keywords = ['meesho', 'shopsy', 'msho', 'wishlink']
@@ -59,16 +62,17 @@ shortnerfound = ['extp', 'bitli', 'bit.ly', 'bitly', 'bitili', 'biti']
 
 # tuple(amazon_keywords): amazon_id,
 keyword_to_chat_id = {
+    tuple(zepto_keywords):zepto_id,
     tuple(amazon_keywords): amazon_id,
     tuple(flipkart_keywords): flipkart_id,
     tuple(meesho_keywords): meesho_id,
     tuple(ajio_keywords): ajiomyntra_id
 }
 BANNER_MESSAGES = {
-    -1002049093974: "🔥Search @All_Amazon_deal ❤️‍🔥",  # Replace with actual channel ID
-    -1002347373294: "💥 Search @ALL_FLIPKART_DEALS 💥",
-    -1002466670728: "🛍️ Search  @meesho_shopsy_deal 🛍️",
-    -1002410844336: " 👗 Search @myntra_ajio_all_deals 😉"
+    -1002049093974: "🔥Search @LootsVault ❤️‍🔥",  # Replace with actual channel ID
+    -1002347373294: "💥 Search @LootsVault💥",
+    -1002466670728: "🛍️ Search  @LootsVault 🛍️",
+    -1002410844336: " 👗 Search @LootsVault 😉"
 }
 # =========================
 # 📌 Silent Control
@@ -283,11 +287,11 @@ async def send(id, message):
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
             await app.send_message(chat_id=id,
-                                   text=f'<b>{Newtext}</b>',
+                                   text=f'<b>{Newtext}\n\nＬｏｏｔｓＶａｕｌｔ</b>',
                                    disable_web_page_preview=True,disable_notification = not notify)
         else:
             await app.send_message(chat_id=id,
-                                   text=f'<b>{modifiedtxt}</b>',
+                                   text=f'<b>{modifiedtxt}\n\nＬｏｏｔｓＶａｕｌｔ</b>',
                                    disable_web_page_preview=True,disable_notification = not notify)
 
 
@@ -400,7 +404,6 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
-
 
 
 
