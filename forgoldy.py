@@ -41,7 +41,7 @@ zepto_id= -1003059572977
 
 zepto_keywords=['jiomart','Amazon Fresh','blinkit','zepto','swiggy','bigbasket','Instamart','Flipkart minutes','instamart','Blinkit',
                 'Zepto','Swiggy','flipkart minutes','minutes loot']
-amazon_keywords = ['amzn', 'amazon', 'tinyurl']
+amazon_keywords = ['amzn', 'amazon', 'tinyurl','amazn']
 flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt']
 meesho_keywords = ['meesho', 'shopsy', 'msho', 'wishlink']
 ajio_keywords = ['ajiio', 'myntr', 'xyxx', 'ajio', 'myntra', 'mamaearth', 'bombayshavingcompany', 'beardo', 'Beardo',
@@ -404,6 +404,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
 
 
