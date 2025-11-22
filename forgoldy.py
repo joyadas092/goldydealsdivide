@@ -222,7 +222,33 @@ def should_notify(chat_id: int) -> bool:
     post_counter[chat_id] += 1
     return post_counter[chat_id] % silent_interval == 0
 
+def should_block_message(text: str) -> bool:
+    """
+    Block if '@' is followed by ANY letter (a-z / A-Z) without a space.
+    Allow if '@' is followed ONLY by digits (price like @141).
+    """
+    if not text:
+        return False
+
+    # find all occurrences of @something
+    matches = re.findall(r"@([A-Za-z0-9_]+)", text)
+
+    for m in matches:
+        # if it starts with digits ONLY → allowed
+        if m.isdigit():
+            continue
+
+        # if it contains any alphabet → block
+        if re.search(r"[A-Za-z]", m):
+            return True
+
+    return False
+  
 async def send(id, message):
+    text2 = message.caption if message.caption else message.text
+    if should_block_message(text2):
+        # await app.send_message(chat_id=5886397642,text='Just Blocked a Promo')
+        return
     # https://t.me/+EUkke-EZOcMxMGE1
     Promo = InlineKeyboardMarkup(
         [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
@@ -404,6 +430,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
 
 
