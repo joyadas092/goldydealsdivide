@@ -8,7 +8,7 @@ import json
 from pyrogram import Client, filters, enums
 from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
 import logging
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 import re
 import asyncio
 from quart import Quart
@@ -32,7 +32,7 @@ logger.setLevel(logging.INFO)
 
 source_channel_id = [-1002365489797]  # Replace with the source channel ID
 amazon_id = -1002385099278
-flipkart_id = -1002347373294
+flipkart_id = -1003066292672
 meesho_id = -1002466670728
 ajiomyntra_id = -1002410844336
 zepto_id= -1003059572977
@@ -42,7 +42,7 @@ private_channel=[-1002803694251]
 
 
 zepto_keywords=['jiomart','Amazon Fresh','blinkit','zepto','swiggy','bigbasket','Instamart','Flipkart minutes','instamart','Blinkit',
-                'Zepto','Swiggy','flipkart minutes','minutes loot']
+                'Zepto','Swiggy','flipkart minutes','minutes loot','ONDC','Zomato','Blinkit']
 amazon_keywords = ['amzn', 'amazon', 'tinyurl','amazn']
 flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt']
 meesho_keywords = ['meesho', 'shopsy', 'msho', 'wishlink']
@@ -215,7 +215,33 @@ def compilehyperlink(message):
         inputvalue = removedup(inputvalue)
         inputvalue = (inputvalue.split("😱 Deal Time")[0]).strip()
     return inputvalue
+def make_16_9_with_padding(file_bytes, target_width=1280, target_height=720):
+    file_bytes.seek(0)
+    img = Image.open(file_bytes).convert("RGB")
 
+    original_width, original_height = img.size
+
+    # Calculate scale while preserving aspect ratio
+    scale = min(target_width / original_width, target_height / original_height)
+    new_width = int(original_width * scale)
+    new_height = int(original_height * scale)
+
+    resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+
+    # Create white background
+    background = Image.new("RGB", (target_width, target_height), (255, 255, 255))
+
+    # Center image
+    paste_x = (target_width - new_width) // 2
+    paste_y = (target_height - new_height) // 2
+
+    background.paste(resized_img, (paste_x, paste_y))
+
+    output = BytesIO()
+    background.save(output, format="JPEG", quality=95)
+    output.seek(0)
+
+    return output
 def should_notify(chat_id: int) -> bool:
     """Return True if this post should notify, False if silent."""
     global post_counter, silent_interval
@@ -224,7 +250,7 @@ def should_notify(chat_id: int) -> bool:
     post_counter[chat_id] += 1
     return post_counter[chat_id] % silent_interval == 0
 
-async def send(id, message):
+async def send(id, message,processed):
     # https://t.me/+EUkke-EZOcMxMGE1
     Promo = InlineKeyboardMarkup(
         [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
@@ -259,6 +285,10 @@ async def send(id, message):
             # bannered_image.save(image_bytes, format="JPEG")  # ✅ Avoids 'NoneType' error
             # image_bytes.seek(0)
 
+            # file_bytes = await message.download(in_memory=True)
+            # processed = make_16_9_with_padding(file_bytes)
+
+
             # Modify caption with "Buy Now" links
             if 'tinyurl' in modifiedtxt or 'amazon' in modifiedtxt:
                 # print('amzn working')
@@ -266,12 +296,16 @@ async def send(id, message):
                 Newtext = modifiedtxt
                 for url in urls:
                     Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
-                await app.send_photo(chat_id=id, photo=message.photo.file_id,
+                await app.send_photo(chat_id=id,
+                                     # photo=message.photo.file_id,
+                                     photo=processed,
                                      caption=f'<b>{Newtext}</b>' + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                      reply_markup=Promo,
                                      disable_notification = not notify )
             else:
-                await app.send_photo(chat_id=id, photo=message.photo.file_id,
+                await app.send_photo(chat_id=id,
+                                     # photo=message.photo.file_id,
+                                     photo=processed,
                                      caption=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                      reply_markup=Promo,disable_notification = not notify)
 
@@ -289,11 +323,11 @@ async def send(id, message):
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
             await app.send_message(chat_id=id,
-                                   text=f'<b>{Newtext}\n\nＬｏｏｔｓＶａｕｌｔ</b>',
+                                   text=f'<b>{Newtext}\n\n𝕝𝕠𝕠𝕥𝕤𝕧𝕒𝕦𝕝𝕥</b>',
                                    disable_web_page_preview=True,disable_notification = not notify)
         else:
             await app.send_message(chat_id=id,
-                                   text=f'<b>{modifiedtxt}\n\nＬｏｏｔｓＶａｕｌｔ</b>',
+                                   text=f'<b>{modifiedtxt}\n\n𝕝𝕠𝕠𝕥𝕤𝕧𝕒𝕦𝕝𝕥</b>',
                                    disable_web_page_preview=True,disable_notification = not notify)
 
 
@@ -352,6 +386,7 @@ async def callback_query(app, CallbackQuery):
 async def forward_message(client, message):
     if forward == True:
         inputvalue = ''
+        processed = None
         if message.caption_entities:
             for entity in message.caption_entities:
                 if entity.url is not None:
@@ -360,6 +395,30 @@ async def forward_message(client, message):
             if inputvalue == '':
                 text = message.caption if message.caption else message.text
                 inputvalue = text
+
+            # Nexus photo converter
+            file_bytes = await message.download(in_memory=True)
+            processed = make_16_9_with_padding(file_bytes)
+
+            try:
+                await app.edit_message_media(
+                    chat_id=message.chat.id,
+                    message_id=message.id,
+                    media=InputMediaPhoto(
+                        media=processed,
+                        caption=message.caption
+                    ),
+                    reply_markup=InlineKeyboardMarkup(
+                        [[InlineKeyboardButton(
+                            "🏠 Join LootsVault | Save Money 💰",
+                            url="https://t.me/addlist/3G8HfhX3WSEwNmI1"
+                        )]]
+                    )
+                )
+            except Exception as e:
+                print(e)
+                # await asyncio.sleep(e.value)
+                # await app.edit_message_media(...)
 
         if message.entities:
             for entity in message.entities:
@@ -386,7 +445,7 @@ async def forward_message(client, message):
 
         for keywords, chat_id in keyword_to_chat_id.items():
             if any(keyword in inputvalue for keyword in keywords):
-                await send(chat_id, message)
+                await send(chat_id, message, processed)
 
 
 @app.on_message(filters.chat(private_channel))
@@ -470,7 +529,6 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
-
 
 
 
