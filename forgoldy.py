@@ -460,7 +460,7 @@ async def forward_message(client, message):
     text2 = None  # 🔑 IMPORTANT
 
     try:
-        if 'shopsy' in text or 'amazon.in' in text:
+        if 'amazon.in' in text:
             text2 = await asyncio.get_event_loop().run_in_executor(
                 None, ekconvert, text
             )
@@ -529,6 +529,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
+
 
 
 
