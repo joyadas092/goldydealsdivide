@@ -506,7 +506,7 @@ async def send_budget_149(message, final_caption: str):
         else:
             await app.send_message(
                 chat_id=BUDGET_CHANNEL_ID,
-                text=f"<b>{final_caption}</b>{extra_html}",
+                text=f"<b>{final_caption}</b>",
                 disable_web_page_preview=True
             )
 
