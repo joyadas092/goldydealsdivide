@@ -4,6 +4,8 @@ from io import BytesIO
 import requests
 from PIL import Image, ImageDraw, ImageFont
 import json
+
+from openai import OpenAI
 # from playwright.async_api import async_playwright
 from pyrogram import Client, filters, enums
 from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
@@ -23,6 +25,8 @@ api_hash = os.getenv("API_HASH")
 bot_token = os.getenv("BOT_TOKEN")
 apitoken=os.getenv('EARNKARO_API_TOKEN')
 app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # Define a handler for the /start command
 bot = Quart(__name__)
@@ -39,6 +43,8 @@ zepto_id= -1003059572977
 # cc_id = -1002078634799
 # beauty_id = -1002046497963
 private_channel=[-1002803694251]
+
+BUDGET_CHANNEL_ID = -1003898460377
 
 
 zepto_keywords=['jiomart','Amazon Fresh','blinkit','zepto','swiggy','bigbasket','Instamart','Flipkart minutes','instamart','Blinkit',
@@ -355,7 +361,68 @@ async def send(id, message,processed):
             await app.send_message(chat_id=id,
                                    text=f'<b>{modifiedtxt}</b>',
                                    disable_web_page_preview=True,disable_notification = not notify)
+def extract_price_regex(text: str):
+    if not text:
+        return None
+    # Common INR price patterns: ₹149, Rs. 149, INR 149, 149/-, 149 rs
+    patterns = [
+        r"(?:₹|Rs\.?\s*|INR\s*)(\d{1,6}(?:\.\d{1,2})?)",
+        r"(\d{1,6}(?:\.\d{1,2})?)\s*/-",
+        r"(\d{1,6}(?:\.\d{1,2})?)\s*(?:rs|inr)\b",
+        r"price\s*[:\-]?\s*(?:₹\s*)?(\d{1,6}(?:\.\d{1,2})?)",
+    ]
+    candidates = []
+    for p in patterns:
+        for m in re.findall(p, text, flags=re.IGNORECASE):
+            try:
+                candidates.append(float(m))
+            except:
+                continue
+    if not candidates:
+        return None
+    # Return the minimum plausible price found
+    return min(candidates)
 
+def extract_price_ai(text: str):
+    if not text or client is None:
+        return None
+    prompt = f"""
+    Extract the most likely current price in Indian Rupees from the text.
+    - If multiple prices are present (e.g., MRP, deal price), return the LOWEST deal/final price.
+    - Return ONLY a number (no currency symbol), like 149 or 149.00.
+    - If no price is present, return "None".
+
+    Text:
+    {text}
+    """
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Extract the lowest deal price in INR as a number only."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.0,
+        )
+        content = (response.choices[0].message.content or "").strip()
+        if content.lower() == "none":
+            return None
+        # keep only first number if any additional text slipped
+        m = re.search(r"\d+(?:\.\d+)?", content)
+        if not m:
+            return None
+        return float(m.group(0))
+    except Exception as e:
+        print(f"❌ GPT price extraction error: {e}")
+        return None
+
+def get_product_price(text: str):
+    # Try regex first
+    price = extract_price_regex(text)
+    if price is not None:
+        return price
+    # Fallback to AI
+    return extract_price_ai(text)
 
 @bot.route('/')
 async def hello():
@@ -405,73 +472,141 @@ async def callback_query(app, CallbackQuery):
         await CallbackQuery.edit_message_text('Forward to Channel Status turned On', reply_markup=forward_off)
         forward = True
 
+async def send_budget_149(message, final_caption: str):
+    if not BUDGET_CHANNEL_ID:
+        return
 
+    try:
+        extra_html = (
+            "\n\n<b>🛍️ 👉 "
+            "<a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>"
+            "Click & Join More Deals"
+            "</a></b>"
+        )
+
+        promo = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "🏠 Join Secret Deals",
+                        url="https://t.me/+vUHFBOFLHd02MTZl1"
+                    )
+                ]
+            ]
+        )
+
+        if message.photo:
+            await app.send_photo(
+                chat_id=BUDGET_CHANNEL_ID,
+                photo=message.photo.file_id,
+                caption=f"<b>{final_caption}</b>{extra_html}",
+                reply_markup=promo
+            )
+
+        else:
+            await app.send_message(
+                chat_id=BUDGET_CHANNEL_ID,
+                text=f"<b>{final_caption}</b>{extra_html}",
+                disable_web_page_preview=True
+            )
+
+        print(f"💸 Budget post sent to {BUDGET_CHANNEL_ID}")
+
+    except FloodWait as e:
+        print(f"FloodWait: sleeping {e.value}s")
+        await asyncio.sleep(e.value)
+
+    except Exception as e:
+        print(f"❌ Error sending to budget channel: {e}")
 ########################################################################################
 
 @app.on_message(filters.chat(source_channel_id))
 async def forward_message(client, message):
-    if forward == True:
-        inputvalue = ''
-        processed = None
-        if message.caption_entities:
-            for entity in message.caption_entities:
-                if entity.url is not None:
-                    inputvalue = entity.url
-            # print(hyerlinkurl)
-            if inputvalue == '':
-                text = message.caption if message.caption else message.text
-                inputvalue = text
+    if forward!= True:
+        return
 
-            # Nexus photo converter
-            file_bytes = await message.download(in_memory=True)
-            processed = make_16_9_with_padding(file_bytes)
+    inputvalue = ''
+    processed = None
 
-            try:
-                await app.edit_message_media(
-                    chat_id=message.chat.id,
-                    message_id=message.id,
-                    media=InputMediaPhoto(
-                        media=processed,
-                        caption=message.caption
-                    ),
-                    reply_markup=InlineKeyboardMarkup(
-                        [[InlineKeyboardButton(
-                            "🏠 Join LootsVault | Save Money 💰",
-                            url="https://t.me/addlist/3G8HfhX3WSEwNmI1"
-                        )]]
-                    )
+
+    # Extract message text/caption first
+    if message.caption:
+        inputvalue = message.caption
+    elif message.text:
+        inputvalue = message.text
+
+    # NOW extract price
+    price = get_product_price(inputvalue)
+
+    print("TEXT:", inputvalue)
+    print("PRICE:", price)
+
+    # Budget logic
+    if price is not None and price <= 149:
+        print("🔥 Sending to budget channel")
+        await send_budget_149(message, inputvalue)
+
+    if message.caption_entities:
+        for entity in message.caption_entities:
+            if entity.url is not None:
+                inputvalue = entity.url
+        # print(hyerlinkurl)
+        if inputvalue == '':
+            text = message.caption if message.caption else message.text
+            inputvalue = text
+
+        # Nexus photo converter
+        file_bytes = await message.download(in_memory=True)
+        processed = make_16_9_with_padding(file_bytes)
+
+        try:
+            await app.edit_message_media(
+                chat_id=message.chat.id,
+                message_id=message.id,
+                media=InputMediaPhoto(
+                    media=processed,
+                    caption=message.caption
+                ),
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton(
+                        "🏠 Join LootsVault | Save Money 💰",
+                        url="https://t.me/addlist/3G8HfhX3WSEwNmI1"
+                    )]]
                 )
-            except Exception as e:
-                print(e)
-                # await asyncio.sleep(e.value)
-                # await app.edit_message_media(...)
+            )
+        except Exception as e:
+            print(e)
+            # await asyncio.sleep(e.value)
+            # await app.edit_message_media(...)
 
-        if message.entities:
-            for entity in message.entities:
-                if entity.url is not None:
-                    inputvalue = entity.url
-            # print(hyerlinkurl)
-            if inputvalue == '':
-                text = message.text
-                inputvalue = text
+    if message.entities:
+        for entity in message.entities:
+            if entity.url is not None:
+                inputvalue = entity.url
+        # print(hyerlinkurl)
+        if inputvalue == '':
+            text = message.text
+            inputvalue = text
 
-        if any(keyword in inputvalue for keyword in shortnerfound):
-            # print(extract_link_from_text(inputvalue))
-            # inputvalue= unshorten_url(extract_link_from_text(inputvalue))
-            unshortened_urls = {}
-            urls = extract_link_from_text2(inputvalue)
-            for url in urls:
-                # if 'extp' in url or 'bitli' in url:
-                unshortened_urls[url] = unshorten_url2(url)
-                # else:
-                # unshortened_urls[url] = await unshorten_url(url)
+    if any(keyword in inputvalue for keyword in shortnerfound):
+        # print(extract_link_from_text(inputvalue))
+        # inputvalue= unshorten_url(extract_link_from_text(inputvalue))
+        unshortened_urls = {}
+        urls = extract_link_from_text2(inputvalue)
+        for url in urls:
+            # if 'extp' in url or 'bitli' in url:
+            unshortened_urls[url] = unshorten_url2(url)
+            # else:
+            # unshortened_urls[url] = await unshorten_url(url)
 
-            for original_url, unshortened_url in unshortened_urls.items():
-                inputvalue = inputvalue.replace(original_url, unshortened_url)
+        for original_url, unshortened_url in unshortened_urls.items():
+            inputvalue = inputvalue.replace(original_url, unshortened_url)
 
-        for keywords, chat_id in keyword_to_chat_id.items():
-            if any(keyword in inputvalue for keyword in keywords):
-                await send(chat_id, message, processed)
+    for keywords, chat_id in keyword_to_chat_id.items():
+        if any(keyword in inputvalue for keyword in keywords):
+            await send(chat_id, message, processed)
+
+
 
 
 @app.on_message(filters.chat(private_channel))
@@ -555,18 +690,3 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(bot.run_task(host='0.0.0.0', port=8080))
     loop.run_forever()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
