@@ -489,7 +489,7 @@ async def send_budget_149(message, final_caption: str):
                 [
                     InlineKeyboardButton(
                         "🏠 Join Secret Deals",
-                        url="https://t.me/+vUHFBOFLHd02MTZl1"
+                        url="https://t.me/+vUHFBOFLHd02MTZl"
                     )
                 ]
             ]
