@@ -26,8 +26,8 @@ bot_token = os.getenv("BOT_TOKEN")
 apitoken=os.getenv('EARNKARO_API_TOKEN')
 SESSION_STRING = os.getenv("SESSION_STRING", "").strip()
 
-app = Client("my_bot", api_id=api_id, api_hash=api_hash, session_string=SESSION_STRING)
-# app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
+# app = Client("my_bot", api_id=api_id, api_hash=api_hash, session_string=SESSION_STRING)
+app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
