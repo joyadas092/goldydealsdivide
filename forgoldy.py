@@ -24,7 +24,10 @@ api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 bot_token = os.getenv("BOT_TOKEN")
 apitoken=os.getenv('EARNKARO_API_TOKEN')
-app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
+SESSION_STRING = os.getenv("SESSION_STRING", "").strip()
+
+app = Client("my_bot", api_id=api_id, api_hash=api_hash, session_string=SESSION_STRING)
+# app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
@@ -538,8 +541,8 @@ async def forward_message(client, message):
     # NOW extract price
     price = get_product_price(inputvalue)
 
-    print("TEXT:", inputvalue)
-    print("PRICE:", price)
+    # print("TEXT:", inputvalue)
+    # print("PRICE:", price)
 
     # Budget logic
     if price is not None and price <= 149:
