@@ -421,11 +421,12 @@ def extract_price_ai(text: str):
 
 def get_product_price(text: str):
     # Try regex first
-    price = extract_price_regex(text)
+    price = extract_price_ai(text)
     if price is not None:
+        
         return price
     # Fallback to AI
-    return extract_price_ai(text)
+    # return extract_price_ai(text)
 
 @bot.route('/')
 async def hello():
