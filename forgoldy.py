@@ -503,7 +503,8 @@ async def send_budget_149(message, final_caption: str):
             await app.send_photo(
                 chat_id=BUDGET_CHANNEL_ID,
                 photo=message.photo.file_id,
-                caption=f"<b>{final_caption}</b>{extra_html}",
+                # caption=f"<b>{final_caption}</b>{extra_html}",
+                caption=f"<b>{final_caption}</b>",
                 reply_markup=promo
             )
 
