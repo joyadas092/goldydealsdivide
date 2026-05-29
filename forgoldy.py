@@ -23,11 +23,11 @@ load_dotenv()
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 bot_token = os.getenv("BOT_TOKEN")
-apitoken=os.getenv('EARNKARO_API_TOKEN')
+apitoken = os.getenv('EARNKARO_API_TOKEN')
 SESSION_STRING = os.getenv("SESSION_STRING", "").strip()
 
-# app = Client("my_bot", api_id=api_id, api_hash=api_hash, session_string=SESSION_STRING)
-app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
+# in_memory=True avoids .session file — safe for Render ephemeral filesystem
+app = Client("bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token, in_memory=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
@@ -42,19 +42,20 @@ amazon_id = -1002385099278
 flipkart_id = -1003066292672
 meesho_id = -1002466670728
 ajiomyntra_id = -1002410844336
-zepto_id= -1003059572977
+zepto_id = -1003059572977
 # cc_id = -1002078634799
 # beauty_id = -1002046497963
-private_channel=[-1002803694251]
+private_channel = [-1002803694251]
 
 BUDGET_CHANNEL_ID = -1003898460377
 
-
-zepto_keywords=['jiomart','Amazon Fresh','blinkit','zepto','swiggy','bigbasket','Instamart','Flipkart minutes','instamart','Blinkit',
-                'Zepto','Swiggy','flipkart minutes','minutes loot','ONDC','Zomato','Blinkit']
-amazon_keywords = ['amzn', 'amazon', 'tinyurl','amazn']
-flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt','fkart']
-meesho_keywords = ['meesho', 'shopsy', 'msho', 'wishlink','lehlah']
+zepto_keywords = ['jiomart', 'Amazon Fresh', 'blinkit', 'zepto', 'swiggy', 'bigbasket', 'Instamart', 'Flipkart minutes',
+                  'instamart', 'Blinkit',
+                  'Zepto', 'Swiggy', 'flipkart minutes', 'minutes loot', 'ONDC', 'Zomato', 'Blinkit']
+amazon_keywords = ['amzn', 'amazon', 'tinyurl', 'amazn']
+flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt',
+                     'fkart']
+meesho_keywords = ['meesho', 'shopsy', 'msho', 'wishlink', 'lehlah']
 ajio_keywords = ['ajiio', 'myntr', 'xyxx', 'ajio', 'myntra', 'mamaearth', 'bombayshavingcompany', 'beardo', 'Beardo',
                  'Tresemme', 'themancompany', 'wow', 'nykaa',
                  'mCaffeine', 'mcaffeine', 'Bombay Shaving Company', 'BSC', 'TMC', 'foxtale',
@@ -69,11 +70,12 @@ ajio_keywords = ['ajiio', 'myntr', 'xyxx', 'ajio', 'myntra', 'mamaearth', 'bomba
 #                'ELIGIBILITY', 'Myzone', 'Rupay', 'rupay', 'Complimentary', 'Apply from here', 'annual fee',
 #                'Annual fee', 'joining fee']
 
-shortnerfound = ['extp', 'bitli', 'bit.ly', 'bitly', 'bitili', 'biti','bittli','cutt.ly','wishlink','bilty','cuttli','bilty.co','bttly']
+shortnerfound = ['extp', 'bitli', 'bit.ly', 'bitly', 'bitili', 'biti', 'bittli', 'cutt.ly', 'wishlink', 'bilty',
+                 'cuttli', 'bilty.co', 'bttly']
 
 # tuple(amazon_keywords): amazon_id,
 keyword_to_chat_id = {
-    tuple(zepto_keywords):zepto_id,
+    tuple(zepto_keywords): zepto_id,
     tuple(amazon_keywords): amazon_id,
     tuple(flipkart_keywords): flipkart_id,
     tuple(meesho_keywords): meesho_id,
@@ -88,8 +90,8 @@ BANNER_MESSAGES = {
 # =========================
 # 📌 Silent Control
 # =========================
-silent_interval = 2   # Default: notify every 2nd post
-post_counter = {}     # Track posts per target channel
+silent_interval = 2  # Default: notify every 2nd post
+post_counter = {}  # Track posts per target channel
 
 
 def extract_link_from_text(text):
@@ -224,6 +226,8 @@ def compilehyperlink(message):
         inputvalue = removedup(inputvalue)
         inputvalue = (inputvalue.split("😱 Deal Time")[0]).strip()
     return inputvalue
+
+
 def make_16_9_with_padding(file_bytes, target_width=1280, target_height=720):
     file_bytes.seek(0)
     img = Image.open(file_bytes).convert("RGB")
@@ -251,6 +255,8 @@ def make_16_9_with_padding(file_bytes, target_width=1280, target_height=720):
     output.seek(0)
 
     return output
+
+
 def should_notify(chat_id: int) -> bool:
     """Return True if this post should notify, False if silent."""
     global post_counter, silent_interval
@@ -258,6 +264,7 @@ def should_notify(chat_id: int) -> bool:
         post_counter[chat_id] = 0
     post_counter[chat_id] += 1
     return post_counter[chat_id] % silent_interval == 0
+
 
 def should_block_message(text: str) -> bool:
     """
@@ -281,17 +288,18 @@ def should_block_message(text: str) -> bool:
 
     return False
 
-async def send(id, message,processed):
+
+async def send(id, message, processed):
     # https://t.me/+EUkke-EZOcMxMGE1
     text2 = message.caption if message.caption else message.text
     if should_block_message(text2):
-        await app.send_message(chat_id=5886397642,text='Just Blocked a Promo')
+        await app.send_message(chat_id=5886397642, text='Just Blocked a Promo')
         return
     Promo = InlineKeyboardMarkup(
         [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
           InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")]]
     )
-    notify = should_notify(id)   # ✅ Added line
+    notify = should_notify(id)  # ✅ Added line
 
     if message.photo:
         try:
@@ -323,7 +331,6 @@ async def send(id, message,processed):
             # file_bytes = await message.download(in_memory=True)
             # processed = make_16_9_with_padding(file_bytes)
 
-
             # Modify caption with "Buy Now" links
             if 'tinyurl' in modifiedtxt or 'amazon' in modifiedtxt:
                 # print('amzn working')
@@ -336,13 +343,13 @@ async def send(id, message,processed):
                                      photo=processed,
                                      caption=f'<b>{Newtext}</b>' + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
                                      reply_markup=Promo,
-                                     disable_notification = not notify )
+                                     disable_notification=not notify)
             else:
                 await app.send_photo(chat_id=id,
                                      # photo=message.photo.file_id,
                                      photo=processed,
                                      caption=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
-                                     reply_markup=Promo,disable_notification = not notify)
+                                     reply_markup=Promo, disable_notification=not notify)
 
         except Exception as e:
             print(f"❌ Error in send function: {e}")
@@ -359,11 +366,13 @@ async def send(id, message,processed):
                 Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
             await app.send_message(chat_id=id,
                                    text=f'<b>{Newtext}</b>',
-                                   disable_web_page_preview=True,disable_notification = not notify)
+                                   disable_web_page_preview=True, disable_notification=not notify)
         else:
             await app.send_message(chat_id=id,
                                    text=f'<b>{modifiedtxt}</b>',
-                                   disable_web_page_preview=True,disable_notification = not notify)
+                                   disable_web_page_preview=True, disable_notification=not notify)
+
+
 def extract_price_regex(text: str):
     if not text:
         return None
@@ -385,6 +394,7 @@ def extract_price_regex(text: str):
         return None
     # Return the minimum plausible price found
     return min(candidates)
+
 
 def extract_price_ai(text: str):
     if not text or client is None:
@@ -419,14 +429,15 @@ def extract_price_ai(text: str):
         print(f"❌ GPT price extraction error: {e}")
         return None
 
+
 def get_product_price(text: str):
     # Try regex first
     price = extract_price_ai(text)
     if price is not None:
-        
         return price
     # Fallback to AI
     # return extract_price_ai(text)
+
 
 @bot.route('/')
 async def hello():
@@ -437,6 +448,7 @@ async def hello():
 async def start(client, message):
     await app.send_message(message.chat.id, "ahaann")
 
+
 @app.on_message(filters.regex("silent_") & filters.user(5886397642))
 async def set_silent_interval(client, message):
     global silent_interval
@@ -446,6 +458,7 @@ async def set_silent_interval(client, message):
         await message.reply_text(f"✅ Silent interval set: Every {silent_interval} post will notify.")
     except:
         await message.reply_text("❌ Usage: /silent_2")
+
 
 ################forward on off#################################################################
 global forward
@@ -475,6 +488,7 @@ async def callback_query(app, CallbackQuery):
     elif CallbackQuery.data == 'forward on':
         await CallbackQuery.edit_message_text('Forward to Channel Status turned On', reply_markup=forward_off)
         forward = True
+
 
 async def send_budget_149(message, final_caption: str):
     if not BUDGET_CHANNEL_ID:
@@ -523,16 +537,17 @@ async def send_budget_149(message, final_caption: str):
 
     except Exception as e:
         print(f"❌ Error sending to budget channel: {e}")
+
+
 ########################################################################################
 
 @app.on_message(filters.chat(source_channel_id))
 async def forward_message(client, message):
-    if forward!= True:
+    if forward != True:
         return
 
     inputvalue = ''
     processed = None
-
 
     # Extract message text/caption first
     if message.caption:
@@ -612,14 +627,12 @@ async def forward_message(client, message):
             await send(chat_id, message, processed)
 
 
-
-
 @app.on_message(filters.chat(private_channel))
 async def forward_message(client, message):
     # print('pp', message.id)
 
     text = message.caption or message.text or ""
-    text = text.replace('- Sent via TeleFeed', '').replace('• Sent via TeleFeed','')
+    text = text.replace('- Sent via TeleFeed', '').replace('• Sent via TeleFeed', '')
     if not text:
         return
 
@@ -676,17 +689,63 @@ def ekconvert(text):
     # Extract the "data" part from the dictionary
     data_value = response_dict.get('data')
 
-    return(data_value)
+    return (data_value)
+
+
+# -------------------------------------------------------------------
+# PEER BOOTSTRAP
+# Pyrogram with in_memory=True has no peer cache on startup.
+# Numeric IDs (access_hash=0) fail until Telegram returns the real
+# access_hash. The ONLY reliable bootstrap is via @username — fill
+# these in with the actual @username of each channel.
+# Private/invite-link channels without a username: leave as None,
+# they will be skipped (bot must post to them at least once manually
+# to warm the cache, or give them a username).
+# -------------------------------------------------------------------
+CHANNEL_USERNAMES = [
+    "@all_amazon_deal",     # flipkart_id
+    "@All_fkrt_deals",       # meesho_id
+    "@myntra_ajio_all_deals",         # ajiomyntra_id
+    "@meesho_shopsy_deal",        # zepto_id
+    "@Dealsunder149",       # BUDGET_CHANNEL_ID
+    # source channel and private_channel — add usernames if they have one
+    # None entries are skipped automatically
+]
+# ⚠️ IMPORTANT: Replace the dummy usernames above with the real @usernames
+# of your channels. Get them from channel Info > Link > Public Link.
+# For private channels with no username, set to None.
+
+
+async def resolve_peers():
+    """
+    Resolve all channel peers by @username at startup.
+    This populates Pyrogram's internal peer storage with real access_hashes,
+    so numeric IDs work for the rest of the bot's lifetime.
+    """
+    failed = []
+    for username in CHANNEL_USERNAMES:
+        if username is None:
+            continue
+        try:
+            chat = await app.get_chat(username)
+            print(f"✅ Peer resolved: {username} → {chat.id}")
+        except Exception as e:
+            failed.append(username)
+            print(f"⚠️ Could not resolve peer {username}: {e}")
+    if failed:
+        print(f"❌ Failed (wrong username or bot not admin): {failed}")
+
 
 @bot.before_serving
 async def before_serving():
     await app.start()
-    await app.send_message(chat_id= 5886397642, text='Bot starting')
+    await resolve_peers()
+    await app.send_message(chat_id=5886397642, text="Bot starting")
 
 
 @bot.after_serving
 async def after_serving():
-    await app.send_message(chat_id= 5886397642, text='Bot Stopping')
+    await app.send_message(chat_id=5886397642, text='Bot Stopping')
     await app.stop()
 
 
