@@ -41,7 +41,7 @@ source_channel_id = [-1002365489797]  # Replace with the source channel ID
 amazon_id = -1002385099278
 flipkart_id = -1003066292672
 meesho_id = -1002466670728
-ajiomyntra_id = -1002410844336
+ajiomyntra_id = -1003928380634
 zepto_id = -1003059572977
 # cc_id = -1002078634799
 # beauty_id = -1002046497963
@@ -705,7 +705,7 @@ def ekconvert(text):
 CHANNEL_USERNAMES = [
     "@all_amazon_deal",     # flipkart_id
     "@All_fkrt_deals",       # meesho_id
-    "@myntra_ajio_all_deals",         # ajiomyntra_id
+    "@myntr_ajiio",         # ajiomyntra_id
     "@meesho_shopsy_deal",        # zepto_id
     "@Dealsunder149",       # BUDGET_CHANNEL_ID
     # source channel and private_channel — add usernames if they have one
