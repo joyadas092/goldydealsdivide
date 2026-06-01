@@ -705,8 +705,7 @@ def ekconvert(text):
 CHANNEL_USERNAMES = [
     "@all_amazn_deals",     # flipkart_id
     "@All_fkrt_deals",       # meesho_id
-    "@myntr_ajiio",         # ajiomyntra_id
-    "@meesho_shopsy_deal",        # zepto_id
+    "@myntr_ajiio_Deals",         # ajiomyntra_i
     "@Dealsunder149",
      "@shopsi_meeso_deals"
   # BUDGET_CHANNEL_ID
