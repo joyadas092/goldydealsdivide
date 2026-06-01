@@ -703,11 +703,13 @@ def ekconvert(text):
 # to warm the cache, or give them a username).
 # -------------------------------------------------------------------
 CHANNEL_USERNAMES = [
-    "@all_amazon_deal",     # flipkart_id
+    "@all_amazn_deals",     # flipkart_id
     "@All_fkrt_deals",       # meesho_id
     "@myntr_ajiio",         # ajiomyntra_id
     "@meesho_shopsy_deal",        # zepto_id
-    "@Dealsunder149",       # BUDGET_CHANNEL_ID
+    "@Dealsunder149",
+     "@shopsi_meeso_deals"
+  # BUDGET_CHANNEL_ID
     # source channel and private_channel — add usernames if they have one
     # None entries are skipped automatically
 ]
