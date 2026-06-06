@@ -794,7 +794,7 @@ async def forward_message(client, message):
                     reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton(
                         "🏠 Join LootsVault | Save Money 💰",
-                        url="https://t.me/addlist/3G8HfhX3WSEwNmI1"
+                        url="https://t.me/addlist/to3g-CQrRV4yNGRl"
                     )]]
                     )
                 )
