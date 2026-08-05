@@ -1,11 +1,9 @@
 import tempfile
 from io import BytesIO
-
-import requests
-from PIL import Image, ImageDraw, ImageFont
-import json
-
 from openai import OpenAI
+import requests
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+
 # from playwright.async_api import async_playwright
 from pyrogram import Client, filters, enums
 from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
@@ -18,16 +16,37 @@ from unshortenit import UnshortenIt
 # from playwright.sync_api import sync_playwright
 import os
 from dotenv import load_dotenv
+import json
+
+
+def env_float(name, default):
+    try:
+        return float(os.getenv(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def env_int(name, default):
+    try:
+        return int(os.getenv(name, default))
+    except (TypeError, ValueError):
+        return default
+
 
 load_dotenv()
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 bot_token = os.getenv("BOT_TOKEN")
-apitoken = os.getenv('EARNKARO_API_TOKEN')
-SESSION_STRING = os.getenv("SESSION_STRING", "").strip()
-
-# in_memory=True avoids .session file — safe for Render ephemeral filesystem
-app = Client("bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token, in_memory=True)
+apitoken=os.getenv('EARNKARO_API_TOKEN')
+openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+script_dir = os.path.dirname(os.path.abspath(__file__))
+logo_path = os.getenv("LOGO_PATH", os.path.join(script_dir, "logo.png"))
+brand_banner_text = os.getenv("BRAND_BANNER_TEXT", "Join @LootsVault")
+center_watermark_scale = env_float("CENTER_WATERMARK_SCALE", 0.60)
+center_watermark_opacity = env_int("CENTER_WATERMARK_OPACITY", 20)
+center_watermark_shadow_opacity = env_int("CENTER_WATERMARK_SHADOW_OPACITY", 25)
+app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
@@ -49,13 +68,11 @@ private_channel = [-1002803694251]
 
 BUDGET_CHANNEL_ID = -1003898460377
 
-zepto_keywords = ['jiomart', 'Amazon Fresh', 'blinkit', 'zepto', 'swiggy', 'bigbasket', 'Instamart', 'Flipkart minutes',
-                  'instamart', 'Blinkit',
-                  'Zepto', 'Swiggy', 'flipkart minutes', 'minutes loot', 'ONDC', 'Zomato', 'Blinkit']
-amazon_keywords = ['amzn', 'amazon', 'tinyurl', 'amazn']
-flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt',
-                     'fkart']
-meesho_keywords = ['meesho', 'shopsy', 'msho', 'wishlink', 'lehlah']
+zepto_keywords=['jiomart','Amazon Fresh','blinkit','zepto','swiggy','bigbasket','Instamart','Flipkart minutes','instamart','Blinkit',
+                'Zepto','Swiggy','flipkart minutes','minutes loot','ONDC','Zomato','Blinkit']
+amazon_keywords = ['amzn', 'amazon', 'tinyurl','amazn']
+flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt','fkart']
+meesho_keywords = ['meesho', 'shopsy', 'msho','lehlah']
 ajio_keywords = ['ajiio', 'myntr', 'xyxx', 'ajio', 'myntra', 'mamaearth', 'bombayshavingcompany', 'beardo', 'Beardo',
                  'Tresemme', 'themancompany', 'wow', 'nykaa',
                  'mCaffeine', 'mcaffeine', 'Bombay Shaving Company', 'BSC', 'TMC', 'foxtale',
@@ -70,12 +87,11 @@ ajio_keywords = ['ajiio', 'myntr', 'xyxx', 'ajio', 'myntra', 'mamaearth', 'bomba
 #                'ELIGIBILITY', 'Myzone', 'Rupay', 'rupay', 'Complimentary', 'Apply from here', 'annual fee',
 #                'Annual fee', 'joining fee']
 
-shortnerfound = ['extp', 'bitli', 'bit.ly', 'bitly', 'bitili', 'biti', 'bittli', 'cutt.ly', 'wishlink', 'bilty',
-                 'cuttli', 'bilty.co', 'bttly']
+shortnerfound = ['extp', 'bitli', 'bit.ly', 'bitly', 'bitili', 'biti','wishlink','bittli','cutt.ly','bilty','cuttli','bilty.co','bttly']
 
 # tuple(amazon_keywords): amazon_id,
+    # tuple(zepto_keywords):zepto_id,
 keyword_to_chat_id = {
-    tuple(zepto_keywords): zepto_id,
     tuple(amazon_keywords): amazon_id,
     tuple(flipkart_keywords): flipkart_id,
     tuple(meesho_keywords): meesho_id,
@@ -90,9 +106,8 @@ BANNER_MESSAGES = {
 # =========================
 # 📌 Silent Control
 # =========================
-silent_interval = 2  # Default: notify every 2nd post
-post_counter = {}  # Track posts per target channel
-
+silent_interval = 3   # Default: notify every 2nd post
+post_counter = {}     # Track posts per target channel
 
 def extract_link_from_text(text):
     # Regular expression pattern to match a URL
@@ -178,35 +193,173 @@ def removedup(text):
     return cleaned_text
 
 
-def add_banner_to_image(image, text):
-    draw = ImageDraw.Draw(image)
+def get_font(size, bold=False):
+    font_candidates = [
+        r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
+        r"C:\Windows\Fonts\segoeuib.ttf" if bold else r"C:\Windows\Fonts\segoeui.ttf",
+        "arial.ttf",
+    ]
+    for font_file in font_candidates:
+        try:
+            return ImageFont.truetype(font_file, size=size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
+
+def resolve_logo_path():
+    if logo_path and os.path.exists(logo_path):
+        return logo_path
+
+    for filename in ("logo.png", "logo.jpg", "logo.jpeg", "lootsxpert_logo.png", "lootsxpert_logo.jpg"):
+        candidate = os.path.join(script_dir, filename)
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+
+def make_round_logo(size):
+    logo_file = resolve_logo_path()
+    badge = Image.new("RGBA", (size, size), (12, 12, 12, 255))
+
+    if logo_file:
+        try:
+            logo = Image.open(logo_file).convert("RGBA")
+            logo.thumbnail((int(size * 0.82), int(size * 0.82)), Image.LANCZOS)
+            x = (size - logo.width) // 2
+            y = (size - logo.height) // 2
+            badge.alpha_composite(logo, (x, y))
+        except Exception as e:
+            print(f"Logo load failed: {e}")
+    else:
+        draw = ImageDraw.Draw(badge)
+        font = get_font(int(size * 0.34), bold=True)
+        text = "LX"
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_x = (size - (bbox[2] - bbox[0])) // 2
+        text_y = (size - (bbox[3] - bbox[1])) // 2 - 2
+        draw.text((text_x, text_y), text, fill=(255, 255, 255, 255), font=font)
+
+    circle_mask = Image.new("L", (size, size), 0)
+    mask_draw = ImageDraw.Draw(circle_mask)
+    mask_draw.ellipse((0, 0, size - 1, size - 1), fill=255)
+    badge.putalpha(circle_mask)
+
+    border = Image.new("RGBA", (size + 8, size + 8), (0, 0, 0, 0))
+    border_draw = ImageDraw.Draw(border)
+    border_draw.ellipse((0, 0, size + 7, size + 7), fill=(255, 255, 255, 235))
+    border.alpha_composite(badge, (4, 4))
+    return border
+
+
+def scaled_alpha(mask, opacity):
+    opacity = max(0, min(255, int(opacity)))
+    return mask.point(lambda pixel: int(pixel * opacity / 255))
+
+
+def make_center_watermark(max_width, max_height, opacity, shadow_opacity=center_watermark_shadow_opacity):
+    opacity = max(0, min(255, int(opacity)))
+    shadow_opacity = max(0, min(255, int(shadow_opacity)))
+    logo_file = resolve_logo_path()
+
+    if logo_file:
+        try:
+            logo = Image.open(logo_file).convert("RGBA")
+        except Exception as e:
+            print(f"Center watermark logo load failed: {e}")
+            logo = None
+    else:
+        logo = None
+
+    if logo:
+        logo.thumbnail((max_width, max_height), Image.LANCZOS)
+        mark_mask = logo.convert("L")
+        mark_mask = ImageEnhance.Contrast(mark_mask).enhance(2.8)
+        mark_mask = mark_mask.point(lambda pixel: 0 if pixel < 70 else min(255, int((pixel - 70) * 1.55)))
+        mark_mask = mark_mask.filter(ImageFilter.GaussianBlur(0.45))
+    else:
+        logo = Image.new("RGBA", (max_width, max_height), (0, 0, 0, 0))
+        mark_mask = Image.new("L", (max_width, max_height), 0)
+        draw = ImageDraw.Draw(mark_mask)
+        font = get_font(int(min(max_width, max_height) * 0.28), bold=True)
+        text = "LootsXpert"
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_x = (max_width - (bbox[2] - bbox[0])) // 2
+        text_y = (max_height - (bbox[3] - bbox[1])) // 2
+        draw.text((text_x, text_y), text, fill=255, font=font)
+
+    pad = 18
+    watermark = Image.new("RGBA", (logo.width + pad * 2, logo.height + pad * 2), (0, 0, 0, 0))
+
+    shadow = Image.new("RGBA", logo.size, (0, 0, 0, 255))
+    shadow.putalpha(scaled_alpha(mark_mask.filter(ImageFilter.GaussianBlur(2.2)), shadow_opacity))
+    watermark.alpha_composite(shadow, (pad + 5, pad + 6))
+
+    stamp = Image.new("RGBA", logo.size, (255, 255, 255, 255))
+    stamp.putalpha(scaled_alpha(mark_mask, opacity))
+    watermark.alpha_composite(stamp, (pad, pad))
+
+    dark_stamp = Image.new("RGBA", logo.size, (0, 0, 0, 255))
+    dark_stamp.putalpha(scaled_alpha(mark_mask, int(opacity * 0.35)))
+    watermark.alpha_composite(dark_stamp, (pad + 2, pad + 2))
+
+    return watermark
+
+
+def add_branding_to_image(
+        image,
+        text=brand_banner_text,
+        center_logo_scale=center_watermark_scale,
+        center_logo_opacity=center_watermark_opacity,
+        center_logo_shadow_opacity=center_watermark_shadow_opacity):
+    image = image.convert("RGBA")
     width, height = image.size
-    banner_height = int(height * 0.12)  # Banner size (12% of image height)
 
-    # Create a banner overlay
-    banner = Image.new("RGB", (width, banner_height), color=(255, 0, 0))  # Red banner
-    draw_banner = ImageDraw.Draw(banner)
+    if center_logo_scale > 0 and center_logo_opacity > 0:
+        watermark_width = max(1, int(width * center_logo_scale))
+        watermark_height = max(1, int(height * center_logo_scale))
+        watermark = make_center_watermark(
+            watermark_width,
+            watermark_height,
+            center_logo_opacity,
+            center_logo_shadow_opacity
+        )
+        watermark_x = (width - watermark.width) // 2
+        watermark_y = (height - watermark.height) // 2
+        image.alpha_composite(watermark, (watermark_x, watermark_y))
 
-    # Load font
+    banner_height = max(64, int(height * 0.115))
+    banner = Image.new("RGBA", (width, banner_height), (12, 12, 12, 232))
+    banner_draw = ImageDraw.Draw(banner)
+    banner_draw.rectangle((0, 0, width, 4), fill=(255, 255, 255, 225))
+
+    font = get_font(int(banner_height * 0.46), bold=True)
+    bbox = banner_draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    text_position = ((width - text_width) // 2, (banner_height - text_height) // 2 - 2)
+    banner_draw.text(text_position, text, fill=(255, 255, 255, 255), font=font)
+    image.alpha_composite(banner, (0, height - banner_height))
+
+    logo_size = max(72, int(min(width, height) * 0.13))
+    margin = max(18, int(min(width, height) * 0.035))
+    shadow = Image.new("RGBA", (logo_size + 14, logo_size + 14), (0, 0, 0, 0))
+    shadow_draw = ImageDraw.Draw(shadow)
+    shadow_draw.ellipse((7, 7, logo_size + 13, logo_size + 13), fill=(0, 0, 0, 105))
+    image.alpha_composite(shadow, (margin - 2, margin - 2))
+    image.alpha_composite(make_round_logo(logo_size), (margin, margin))
+
+    return image.convert("RGB")
+
+
+def findpcode(url):
     try:
-        font = ImageFont.truetype("arial.ttf", size=int(banner_height * 0.97))  # Adjust font size
-    except:
-        font = ImageFont.load_default()  # Use default if arial.ttf is missing
-
-    # Get text bounding box (new method)
-    bbox = draw_banner.textbbox((0, 0), text, font=font)
-    text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
-
-    # Center text on the banner
-    text_position = ((width - text_width) // 2, (banner_height - text_height) // 2)
-    draw_banner.text(text_position, text, fill="white", font=font)
-
-    # Append banner to image
-    combined_image = Image.new("RGB", (width, height + banner_height))
-    combined_image.paste(image, (0, 0))
-    combined_image.paste(banner, (0, height))
-
-    return combined_image
+        product_code_match = re.search(r"/product/([A-Za-z0-9]{10})", url)
+        product_code_match2 = re.search(r'/dp/([A-Za-z0-9]{10})', url)
+        product_code = product_code_match.group(1) if product_code_match else product_code_match2.group(1)
+        return product_code
+    except Exception as e:
+        return
 
 
 def compilehyperlink(message):
@@ -214,6 +367,7 @@ def compilehyperlink(message):
     inputvalue = text
     hyperlinkurl = []
     entities = message.caption_entities if message.caption else message.entities
+    entities = entities or []
     for entity in entities:
         # new_entities.append(entity)
         if entity.url is not None:
@@ -226,7 +380,6 @@ def compilehyperlink(message):
         inputvalue = removedup(inputvalue)
         inputvalue = (inputvalue.split("😱 Deal Time")[0]).strip()
     return inputvalue
-
 
 def make_16_9_with_padding(file_bytes, target_width=1280, target_height=720):
     file_bytes.seek(0)
@@ -249,14 +402,13 @@ def make_16_9_with_padding(file_bytes, target_width=1280, target_height=720):
     paste_y = (target_height - new_height) // 2
 
     background.paste(resized_img, (paste_x, paste_y))
+    background = add_branding_to_image(background)
 
     output = BytesIO()
     background.save(output, format="JPEG", quality=95)
     output.seek(0)
 
     return output
-
-
 def should_notify(chat_id: int) -> bool:
     """Return True if this post should notify, False if silent."""
     global post_counter, silent_interval
@@ -264,7 +416,6 @@ def should_notify(chat_id: int) -> bool:
         post_counter[chat_id] = 0
     post_counter[chat_id] += 1
     return post_counter[chat_id] % silent_interval == 0
-
 
 def should_block_message(text: str) -> bool:
     """
@@ -289,49 +440,113 @@ def should_block_message(text: str) -> bool:
     return False
 
 
-async def send(id, message, processed):
-    # https://t.me/+EUkke-EZOcMxMGE1
+def strip_html_tags(text):
+    return re.sub(r"<[^>]+>", "", text or "").strip()
+
+
+def clean_ai_caption(text):
+    text = (text or "").strip()
+    text = text.replace("```", "")
+    text = strip_html_tags(text)
+    # Strip blank raw lines first, then re-insert a blank line before any
+    # line containing a link — AI output can't be trusted to keep spacing.
+    lines = [line.strip(" -\t") for line in text.splitlines() if line.strip(" -\t")][:6]
+
+    formatted = []
+    for line in lines:
+        if re.search(r"https?://", line) and formatted:
+            formatted.append("")
+        formatted.append(line)
+
+    return "\n".join(formatted).strip()
+
+
+def rewrite_deal_text_sync(text):
+    if not openai_api_key or not text:
+        return text
+
+    urls = extract_link_from_text2(text)
+    system_prompt = (
+        "Rewrite Telegram shopping deal captions for a child deals channel. "
+        "Make it short, clean, original, and easy to read. "
+        "Slightly change the caption but it should mean to that specific product."
+        "Dont make lengthy or spammy texts"
+        "Use 1-2 relevant emojis."
+        "Put every link on its own line, separated from the preceding text by one blank line. "
+        "Never place a link directly after text on the same line or right below it with no blank line. "
+        "Keep exact prices, coupons, bank offers, product names, and every URL unchanged. "
+        "Remove source channel names, forwarded labels, spammy lines. "
+        "Return plain text only, no Markdown and no HTML"
+    )
+    user_prompt = f"Rewrite this deal caption:\n\n{text}"
+
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/responses",
+            headers={
+                "Authorization": f"Bearer {openai_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": openai_model,
+                "instructions": system_prompt,
+                "input": user_prompt,
+                "max_output_tokens": 180,
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        data = response.json()
+        rewritten = clean_ai_caption(data.get("output_text"))
+
+        if not rewritten:
+            for item in data.get("output", []):
+                for content in item.get("content", []):
+                    if content.get("type") == "output_text":
+                        rewritten = clean_ai_caption(content.get("text"))
+                        break
+                if rewritten:
+                    break
+
+        if not rewritten:
+            return text
+
+        for url in urls:
+            if url not in rewritten:
+                print("AI caption skipped because a URL was changed or removed.")
+                return text
+
+        return rewritten
+    except Exception as e:
+        print(f"AI caption rewrite failed: {e}")
+        return text
+
+
+async def rewrite_child_deal_text(text):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, rewrite_deal_text_sync, text)
+
+async def send(id, message,processed):
+
     text2 = message.caption if message.caption else message.text
     if should_block_message(text2):
-        await app.send_message(chat_id=5886397642, text='Just Blocked a Promo')
+        await app.send_message(chat_id=5886397642,text='Just Blocked a Promo')
         return
-    Promo = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
-          InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")]]
-    )
-    notify = should_notify(id)  # ✅ Added line
+
+    # Promo = InlineKeyboardMarkup(
+    #     [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
+    #       InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")]]
+    # )
+    notify = should_notify(id)   # ✅ Added line
 
     if message.photo:
         try:
-            modifiedtxt = compilehyperlink(message).replace('@under_99_loot_deals', '@shopsy_meesho_Deals')
+            modifiedtxt = compilehyperlink(message).replace('@under_99_loot_deals', '@shopsymeesho')
+            modifiedtxt = await rewrite_child_deal_text(modifiedtxt)
+            if processed is None:
+                file_bytes = await message.download(in_memory=True)
+                processed = make_16_9_with_padding(file_bytes)
 
-            # with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            #     await message.download(file_name=temp_file.name)
-            #     original_image = Image.open(temp_file.name).convert("RGB")
-
-            # # Debug: Check if image is loaded correctly
-            # if original_image is None:
-            #     print("❌ Error: Image not loaded properly!")
-            #     return
-
-            # # Create a bannered image
-            # banner_text = BANNER_MESSAGES.get(id, "🔥 LIMITED DEALS 🔥")  # Default message if ID is not found
-            # bannered_image = add_banner_to_image(original_image, banner_text)
-
-            # # Debug: Check if bannered image is created properly
-            # if bannered_image is None:
-            #     print("❌ Error: add_banner_to_image() returned None!")
-            #     return
-
-            # # Save modified image to BytesIO
-            # image_bytes = BytesIO()
-            # bannered_image.save(image_bytes, format="JPEG")  # ✅ Avoids 'NoneType' error
-            # image_bytes.seek(0)
-
-            # file_bytes = await message.download(in_memory=True)
-            # processed = make_16_9_with_padding(file_bytes)
-
-            # Modify caption with "Buy Now" links
             if 'tinyurl' in modifiedtxt or 'amazon' in modifiedtxt:
                 # print('amzn working')
                 urls = extract_link_from_text2(modifiedtxt)
@@ -341,15 +556,19 @@ async def send(id, message, processed):
                 await app.send_photo(chat_id=id,
                                      # photo=message.photo.file_id,
                                      photo=processed,
-                                     caption=f'<b>{Newtext}</b>' + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
-                                     reply_markup=Promo,
+                                     caption=f'<b>{Newtext}</b>',
+                                     # + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                     # reply_markup=Promo,
                                      disable_notification=not notify)
             else:
                 await app.send_photo(chat_id=id,
                                      # photo=message.photo.file_id,
                                      photo=processed,
-                                     caption=f'<b>{modifiedtxt}</b>' + "\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
-                                     reply_markup=Promo, disable_notification=not notify)
+                                     caption=f'<b>{modifiedtxt}</b>',
+                                     # + "\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
+                                     # reply_markup=Promo,
+                                     disable_notification=not notify)
+
 
         except Exception as e:
             print(f"❌ Error in send function: {e}")
@@ -357,7 +576,9 @@ async def send(id, message, processed):
 
 
     elif message.text:
-        modifiedtxt = compilehyperlink(message).replace('@under_99_loot_deals', '@shopsy_meesho_Deals')
+        modifiedtxt = compilehyperlink(message).replace('@under_99_loot_deals', '@shopsymeesho')
+        modifiedtxt = await rewrite_child_deal_text(modifiedtxt)
+
         if 'tinyurl' in modifiedtxt or 'amazon' in modifiedtxt:
             urls = extract_link_from_text2(modifiedtxt)
             Newtext = modifiedtxt
@@ -371,7 +592,6 @@ async def send(id, message, processed):
             await app.send_message(chat_id=id,
                                    text=f'<b>{modifiedtxt}</b>',
                                    disable_web_page_preview=True, disable_notification=not notify)
-
 
 def extract_price_regex(text: str):
     if not text:
@@ -448,7 +668,6 @@ async def hello():
 async def start(client, message):
     await app.send_message(message.chat.id, "ahaann")
 
-
 @app.on_message(filters.regex("silent_") & filters.user(5886397642))
 async def set_silent_interval(client, message):
     global silent_interval
@@ -489,29 +708,28 @@ async def callback_query(app, CallbackQuery):
         await CallbackQuery.edit_message_text('Forward to Channel Status turned On', reply_markup=forward_off)
         forward = True
 
-
 async def send_budget_149(message, final_caption: str):
     if not BUDGET_CHANNEL_ID:
         return
 
     try:
-        extra_html = (
-            "\n\n<b>🛍️ 👉 "
-            "<a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>"
-            "Click & Join More Deals"
-            "</a></b>"
-        )
+        # extra_html = (
+        #     "\n\n<b>🛍️ 👉 "
+        #     "<a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>"
+        #     "Click & Join More Deals"
+        #     "</a></b>"
+        # )
 
-        promo = InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        "🏠 Join Secret Deals",
-                        url="https://t.me/+vUHFBOFLHd02MTZl"
-                    )
-                ]
-            ]
-        )
+        # promo = InlineKeyboardMarkup(
+        #     [
+        #         [
+        #             InlineKeyboardButton(
+        #                 "🏠 Join Secret Deals",
+        #                 url="https://t.me/+vUHFBOFLHd02MTZl"
+        #             )
+        #         ]
+        #     ]
+        # )
 
         if message.photo:
             await app.send_photo(
@@ -519,7 +737,7 @@ async def send_budget_149(message, final_caption: str):
                 photo=message.photo.file_id,
                 # caption=f"<b>{final_caption}</b>{extra_html}",
                 caption=f"<b>{final_caption}</b>",
-                reply_markup=promo
+                # reply_markup=promo
             )
 
         else:
@@ -540,91 +758,88 @@ async def send_budget_149(message, final_caption: str):
 
 
 ########################################################################################
-
+last_processed_time = 0
 @app.on_message(filters.chat(source_channel_id))
 async def forward_message(client, message):
-    if forward != True:
-        return
+    global last_processed_time
+    current_time = asyncio.get_event_loop().time()
 
-    inputvalue = ''
-    processed = None
+    if current_time - last_processed_time < 5:  # 👈 adjust seconds
+        print("⚠️ Blocked fast message:", message.id)
+        await app.send_message(chat_id=5886397642,text='Blocked fast messages')
+        return
+    
+    last_processed_time = current_time
+    if forward == True:
+        inputvalue = ''
+        processed = None
 
     # Extract message text/caption first
-    if message.caption:
-        inputvalue = message.caption
-    elif message.text:
-        inputvalue = message.text
+        if message.caption:
+            inputvalue = message.caption
+        elif message.text:
+            inputvalue = message.text
+        price = get_product_price(inputvalue)
 
-    # NOW extract price
-    price = get_product_price(inputvalue)
+        if price is not None and price <= 149:
+            print("🔥 Sending to budget channel")
+            await send_budget_149(message, inputvalue)
+        processed = None
 
-    # print("TEXT:", inputvalue)
-    # print("PRICE:", price)
+        if message.photo:
+            inputvalue = message.caption or ''
+            if message.caption_entities:
+                for entity in message.caption_entities:
+                    if entity.url is not None:
+                        inputvalue = entity.url
+                        break
 
-    # Budget logic
-    if price is not None and price <= 149:
-        print("🔥 Sending to budget channel")
-        await send_budget_149(message, inputvalue)
+            file_bytes = await message.download(in_memory=True)
+            processed = make_16_9_with_padding(file_bytes)
 
-    if message.caption_entities:
-        for entity in message.caption_entities:
-            if entity.url is not None:
-                inputvalue = entity.url
-        # print(hyerlinkurl)
-        if inputvalue == '':
-            text = message.caption if message.caption else message.text
-            inputvalue = text
-
-        # Nexus photo converter
-        file_bytes = await message.download(in_memory=True)
-        processed = make_16_9_with_padding(file_bytes)
-
-        try:
-            await app.edit_message_media(
-                chat_id=message.chat.id,
-                message_id=message.id,
-                media=InputMediaPhoto(
-                    media=processed,
-                    caption=message.caption
-                ),
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton(
-                        "🏠 Join LootsVault | Save Money 💰",
-                        url="https://t.me/addlist/3G8HfhX3WSEwNmI1"
-                    )]]
+            try:
+                processed.seek(0)
+                await app.edit_message_media(chat_id=message.chat.id,message_id=message.id,
+                        media=InputMediaPhoto(
+                        media=processed,
+                        caption=message.caption
+                    )
+                    # reply_markup=InlineKeyboardMarkup(
+                    # [[InlineKeyboardButton(
+                    #     "🏠 Join LootsVault | Save Money 💰",
+                    #     url="https://t.me/addlist/3G8HfhX3WSEwNmI1"
+                    # )]]
+                    # )
                 )
-            )
-        except Exception as e:
-            print(e)
-            # await asyncio.sleep(e.value)
-            # await app.edit_message_media(...)
+            except Exception as e:
+                print(e)
 
-    if message.entities:
-        for entity in message.entities:
-            if entity.url is not None:
-                inputvalue = entity.url
-        # print(hyerlinkurl)
-        if inputvalue == '':
-            text = message.text
-            inputvalue = text
+        elif message.text:
+            inputvalue = message.text
+            if message.entities:
+                for entity in message.entities:
+                    if entity.url is not None:
+                        inputvalue = entity.url
+                        break
 
-    if any(keyword in inputvalue for keyword in shortnerfound):
-        # print(extract_link_from_text(inputvalue))
-        # inputvalue= unshorten_url(extract_link_from_text(inputvalue))
-        unshortened_urls = {}
-        urls = extract_link_from_text2(inputvalue)
-        for url in urls:
-            # if 'extp' in url or 'bitli' in url:
-            unshortened_urls[url] = unshorten_url2(url)
-            # else:
-            # unshortened_urls[url] = await unshorten_url(url)
+        if any(keyword in inputvalue for keyword in shortnerfound):
+            # print(extract_link_from_text(inputvalue))
+            # inputvalue= unshorten_url(extract_link_from_text(inputvalue))
+            unshortened_urls = {}
+            urls = extract_link_from_text2(inputvalue)
+            for url in urls:
+                # if 'extp' in url or 'bitli' in url:
+                unshortened_urls[url] = unshorten_url2(url)
+                # else:
+                # unshortened_urls[url] = await unshorten_url(url)
 
-        for original_url, unshortened_url in unshortened_urls.items():
-            inputvalue = inputvalue.replace(original_url, unshortened_url)
+            for original_url, unshortened_url in unshortened_urls.items():
+                inputvalue = inputvalue.replace(original_url, unshortened_url)
 
-    for keywords, chat_id in keyword_to_chat_id.items():
-        if any(keyword in inputvalue for keyword in keywords):
-            await send(chat_id, message, processed)
+        for keywords, chat_id in keyword_to_chat_id.items():
+            if any(keyword in inputvalue for keyword in keywords):
+                await send(chat_id, message, processed)
+
 
 
 @app.on_message(filters.chat(private_channel))
@@ -692,16 +907,29 @@ def ekconvert(text):
     return (data_value)
 
 
-# -------------------------------------------------------------------
-# PEER BOOTSTRAP
-# Pyrogram with in_memory=True has no peer cache on startup.
-# Numeric IDs (access_hash=0) fail until Telegram returns the real
-# access_hash. The ONLY reliable bootstrap is via @username — fill
-# these in with the actual @username of each channel.
-# Private/invite-link channels without a username: leave as None,
-# they will be skipped (bot must post to them at least once manually
-# to warm the cache, or give them a username).
-# -------------------------------------------------------------------
+def ekconvert(text):
+    url = "https://ekaro-api.affiliaters.in/api/converter/public"
+
+    # inputtext = input('enter deal: ')
+    payload = json.dumps({
+        "deal": f"{text}",
+        "convert_option": "convert_only"
+    })
+    headers = {
+        'Authorization': f'Bearer {apitoken}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    # print(response.text)
+    response_dict = json.loads(response.text)
+
+    # Extract the "data" part from the dictionary
+    data_value = response_dict.get('data')
+
+    return(data_value)
+
 CHANNEL_USERNAMES = [
     "@all_amazn_deals",     # flipkart_id
     "@All_fkrt_deals",       # meesho_id
@@ -736,17 +964,16 @@ async def resolve_peers():
     if failed:
         print(f"❌ Failed (wrong username or bot not admin): {failed}")
 
-
 @bot.before_serving
 async def before_serving():
     await app.start()
     await resolve_peers()
-    await app.send_message(chat_id=5886397642, text="Bot starting")
+    await app.send_message(chat_id= 5886397642, text='Bot starting')
 
 
 @bot.after_serving
 async def after_serving():
-    await app.send_message(chat_id=5886397642, text='Bot Stopping')
+    await app.send_message(chat_id= 5886397642, text='Bot Stopping')
     await app.stop()
 
 
