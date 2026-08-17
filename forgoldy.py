@@ -109,6 +109,44 @@ BANNER_MESSAGES = {
 silent_interval = 3   # Default: notify every 2nd post
 post_counter = {}     # Track posts per target channel
 
+# =========================
+# 📢 Promo Control
+# =========================
+promo_enabled = False  # Toggled by /promo_on and /promo_off
+
+PROMO_KEYBOARD = InlineKeyboardMarkup(
+    [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
+      InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")]]
+)
+
+PROMO_FOOTER = "\n\n<b>🛍️ 👉 <a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>"
+
+BUDGET_PROMO_KEYBOARD = InlineKeyboardMarkup(
+    [[InlineKeyboardButton("🏠 Join Secret Deals", url="https://t.me/+vUHFBOFLHd02MTZl")]]
+)
+
+BUDGET_PROMO_FOOTER = "\n\n<b>🛍️ 👉 <a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click & Join More Deals</a></b>"
+
+
+def promo_markup():
+    """Inline promo keyboard when promo is on, else None."""
+    return PROMO_KEYBOARD if promo_enabled else None
+
+
+def promo_footer():
+    """Join-all-deals footer when promo is on, else empty string."""
+    return PROMO_FOOTER if promo_enabled else ""
+
+
+def budget_promo_markup():
+    """Budget-channel promo keyboard when promo is on, else None."""
+    return BUDGET_PROMO_KEYBOARD if promo_enabled else None
+
+
+def budget_promo_footer():
+    """Budget-channel join footer when promo is on, else empty string."""
+    return BUDGET_PROMO_FOOTER if promo_enabled else ""
+
 def extract_link_from_text(text):
     # Regular expression pattern to match a URL
     url_pattern = r'https?://\S+'
@@ -374,7 +412,10 @@ def compilehyperlink(message):
             hyperlinkurl.append(entity.url)
     pattern = re.compile(r'Buy Now')
 
-    inputvalue = pattern.sub(lambda x: hyperlinkurl.pop(0), inputvalue).replace('Regular Price', 'MRP')
+    def _replace_buy_now(match):
+        return hyperlinkurl.pop(0) if hyperlinkurl else match.group(0)
+
+    inputvalue = pattern.sub(_replace_buy_now, inputvalue).replace('Regular Price', 'MRP')
     if "😱 Deal Time" in inputvalue:
         # Remove the part
         inputvalue = removedup(inputvalue)
@@ -533,10 +574,6 @@ async def send(id, message,processed):
         await app.send_message(chat_id=5886397642,text='Just Blocked a Promo')
         return
 
-    # Promo = InlineKeyboardMarkup(
-    #     [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
-    #       InlineKeyboardButton("💬 WhatsApp", url="https://whatsapp.com/channel/0029VanqFQ6KgsNlKMERas3P")]]
-    # )
     notify = should_notify(id)   # ✅ Added line
 
     if message.photo:
@@ -556,17 +593,15 @@ async def send(id, message,processed):
                 await app.send_photo(chat_id=id,
                                      # photo=message.photo.file_id,
                                      photo=processed,
-                                     caption=f'<b>{Newtext}</b>',
-                                     # + "\n\n<b>👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
-                                     # reply_markup=Promo,
+                                     caption=f'<b>{Newtext}</b>' + promo_footer(),
+                                     reply_markup=promo_markup(),
                                      disable_notification=not notify)
             else:
                 await app.send_photo(chat_id=id,
                                      # photo=message.photo.file_id,
                                      photo=processed,
-                                     caption=f'<b>{modifiedtxt}</b>',
-                                     # + "\n\n<b>🛍️ 👉 <a href ='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>",
-                                     # reply_markup=Promo,
+                                     caption=f'<b>{modifiedtxt}</b>' + promo_footer(),
+                                     reply_markup=promo_markup(),
                                      disable_notification=not notify)
 
 
@@ -586,11 +621,13 @@ async def send(id, message,processed):
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
             await app.send_message(chat_id=id,
-                                   text=f'<b>{Newtext}</b>',
+                                   text=f'<b>{Newtext}</b>' + promo_footer(),
+                                   reply_markup=promo_markup(),
                                    disable_web_page_preview=True, disable_notification=not notify)
         else:
             await app.send_message(chat_id=id,
-                                   text=f'<b>{modifiedtxt}</b>',
+                                   text=f'<b>{modifiedtxt}</b>' + promo_footer(),
+                                   reply_markup=promo_markup(),
                                    disable_web_page_preview=True, disable_notification=not notify)
 
 def extract_price_regex(text: str):
@@ -679,6 +716,26 @@ async def set_silent_interval(client, message):
         await message.reply_text("❌ Usage: /silent_2")
 
 
+################promo on off##################################################################
+@app.on_message(filters.command('promo_on') & filters.user(5886397642))
+async def promo_on(client, message):
+    global promo_enabled
+    promo_enabled = True
+    await message.reply_text("✅ Promo ON — buttons + 'Click HERE & Join All Deals' will be added.")
+
+
+@app.on_message(filters.command('promo_off') & filters.user(5886397642))
+async def promo_off(client, message):
+    global promo_enabled
+    promo_enabled = False
+    await message.reply_text("🚫 Promo OFF — buttons and join text removed.")
+
+
+@app.on_message(filters.command('promo_status') & filters.user(5886397642))
+async def promo_status(client, message):
+    await message.reply_text(f"Promo is currently {'ON ✅' if promo_enabled else 'OFF 🚫'}")
+
+
 ################forward on off#################################################################
 global forward
 forward = True
@@ -713,37 +770,19 @@ async def send_budget_149(message, final_caption: str):
         return
 
     try:
-        # extra_html = (
-        #     "\n\n<b>🛍️ 👉 "
-        #     "<a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>"
-        #     "Click & Join More Deals"
-        #     "</a></b>"
-        # )
-
-        # promo = InlineKeyboardMarkup(
-        #     [
-        #         [
-        #             InlineKeyboardButton(
-        #                 "🏠 Join Secret Deals",
-        #                 url="https://t.me/+vUHFBOFLHd02MTZl"
-        #             )
-        #         ]
-        #     ]
-        # )
-
         if message.photo:
             await app.send_photo(
                 chat_id=BUDGET_CHANNEL_ID,
                 photo=message.photo.file_id,
-                # caption=f"<b>{final_caption}</b>{extra_html}",
-                caption=f"<b>{final_caption}</b>",
-                # reply_markup=promo
+                caption=f"<b>{final_caption}</b>" + budget_promo_footer(),
+                reply_markup=budget_promo_markup()
             )
 
         else:
             await app.send_message(
                 chat_id=BUDGET_CHANNEL_ID,
-                text=f"<b>{final_caption}</b>",
+                text=f"<b>{final_caption}</b>" + budget_promo_footer(),
+                reply_markup=budget_promo_markup(),
                 disable_web_page_preview=True
             )
 
