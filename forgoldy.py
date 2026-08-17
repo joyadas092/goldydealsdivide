@@ -1,6 +1,5 @@
 import tempfile
 from io import BytesIO
-from openai import OpenAI
 import requests
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
@@ -38,8 +37,13 @@ api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 bot_token = os.getenv("BOT_TOKEN")
 apitoken=os.getenv('EARNKARO_API_TOKEN')
+# AI providers: Groq first (free tier), OpenAI as paid fallback.
+groq_api_key = os.getenv("GROQ_API_KEY")
+groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+groq_base_url = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 openai_model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+openai_base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 script_dir = os.path.dirname(os.path.abspath(__file__))
 logo_path = os.getenv("LOGO_PATH", os.path.join(script_dir, "logo.png"))
 brand_banner_text = os.getenv("BRAND_BANNER_TEXT", "Join @LootsVault")
@@ -47,8 +51,6 @@ center_watermark_scale = env_float("CENTER_WATERMARK_SCALE", 0.60)
 center_watermark_opacity = env_int("CENTER_WATERMARK_OPACITY", 20)
 center_watermark_shadow_opacity = env_int("CENTER_WATERMARK_SHADOW_OPACITY", 25)
 app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # Define a handler for the /start command
 bot = Quart(__name__)
@@ -481,6 +483,47 @@ def should_block_message(text: str) -> bool:
     return False
 
 
+def ai_providers():
+    """Configured providers in priority order: Groq (free tier) then OpenAI."""
+    providers = []
+    if groq_api_key:
+        providers.append(("groq", groq_base_url, groq_api_key, groq_model))
+    if openai_api_key:
+        providers.append(("openai", openai_base_url, openai_api_key, openai_model))
+    return providers
+
+
+def chat_completion(system_prompt, user_prompt, max_tokens=180, temperature=0.7):
+    """Call /chat/completions on each provider in turn. Returns text, or None if all fail."""
+    for name, base_url, api_key, model in ai_providers():
+        try:
+            response = requests.post(
+                f"{base_url.rstrip('/')}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                },
+                timeout=20,
+            )
+            response.raise_for_status()
+            content = response.json()["choices"][0]["message"]["content"]
+            if content and content.strip():
+                return content
+            print(f"⚠️ {name} returned an empty completion, trying next provider.")
+        except Exception as e:
+            print(f"⚠️ {name} chat completion failed: {e}")
+    return None
+
+
 def strip_html_tags(text):
     return re.sub(r"<[^>]+>", "", text or "").strip()
 
@@ -503,7 +546,7 @@ def clean_ai_caption(text):
 
 
 def rewrite_deal_text_sync(text):
-    if not openai_api_key or not text:
+    if not text or not ai_providers():
         return text
 
     urls = extract_link_from_text2(text)
@@ -521,46 +564,16 @@ def rewrite_deal_text_sync(text):
     )
     user_prompt = f"Rewrite this deal caption:\n\n{text}"
 
-    try:
-        response = requests.post(
-            "https://api.openai.com/v1/responses",
-            headers={
-                "Authorization": f"Bearer {openai_api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": openai_model,
-                "instructions": system_prompt,
-                "input": user_prompt,
-                "max_output_tokens": 180,
-            },
-            timeout=20,
-        )
-        response.raise_for_status()
-        data = response.json()
-        rewritten = clean_ai_caption(data.get("output_text"))
+    rewritten = clean_ai_caption(chat_completion(system_prompt, user_prompt, max_tokens=180))
+    if not rewritten:
+        return text
 
-        if not rewritten:
-            for item in data.get("output", []):
-                for content in item.get("content", []):
-                    if content.get("type") == "output_text":
-                        rewritten = clean_ai_caption(content.get("text"))
-                        break
-                if rewritten:
-                    break
-
-        if not rewritten:
+    for url in urls:
+        if url not in rewritten:
+            print("AI caption skipped because a URL was changed or removed.")
             return text
 
-        for url in urls:
-            if url not in rewritten:
-                print("AI caption skipped because a URL was changed or removed.")
-                return text
-
-        return rewritten
-    except Exception as e:
-        print(f"AI caption rewrite failed: {e}")
-        return text
+    return rewritten
 
 
 async def rewrite_child_deal_text(text):
@@ -654,7 +667,7 @@ def extract_price_regex(text: str):
 
 
 def extract_price_ai(text: str):
-    if not text or client is None:
+    if not text or not ai_providers():
         return None
     prompt = f"""
     Extract the most likely current price in Indian Rupees from the text.
@@ -665,35 +678,32 @@ def extract_price_ai(text: str):
     Text:
     {text}
     """
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Extract the lowest deal price in INR as a number only."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.0,
-        )
-        content = (response.choices[0].message.content or "").strip()
-        if content.lower() == "none":
-            return None
-        # keep only first number if any additional text slipped
-        m = re.search(r"\d+(?:\.\d+)?", content)
-        if not m:
-            return None
-        return float(m.group(0))
-    except Exception as e:
-        print(f"❌ GPT price extraction error: {e}")
+    content = chat_completion(
+        "Extract the lowest deal price in INR as a number only.",
+        prompt,
+        max_tokens=16,
+        temperature=0.0,
+    )
+    if not content:
         return None
+
+    content = content.strip()
+    if content.lower() == "none":
+        return None
+    # keep only first number if any additional text slipped
+    m = re.search(r"\d+(?:\.\d+)?", content)
+    if not m:
+        return None
+    return float(m.group(0))
 
 
 def get_product_price(text: str):
-    # Try regex first
+    # AI first — it reads MRP vs deal price correctly where regex guesses wrong
     price = extract_price_ai(text)
     if price is not None:
         return price
-    # Fallback to AI
-    # return extract_price_ai(text)
+    # Fallback when no provider is configured, both are down, or quota is exhausted
+    return extract_price_regex(text)
 
 
 @bot.route('/')
