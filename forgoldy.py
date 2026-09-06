@@ -124,10 +124,10 @@ PROMO_KEYBOARD = InlineKeyboardMarkup(
 PROMO_FOOTER = "\n\n<b>🛍️ 👉 <a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>"
 
 BUDGET_PROMO_KEYBOARD = InlineKeyboardMarkup(
-    [[InlineKeyboardButton("🏠 Join Secret Deals", url="https://t.me/+vUHFBOFLHd02MTZl")]]
+    [[InlineKeyboardButton("🏠 Join Premium Offers", url="https://t.me/+vUHFBOFLHd02MTZl")]]
 )
 
-BUDGET_PROMO_FOOTER = "\n\n<b>🛍️ 👉 <a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click & Join More Deals</a></b>"
+BUDGET_PROMO_FOOTER = "\n\n<b>🛍️ 👉 <a href='https://t.me/addlist/to3g-CQrRV4yNGRl'>Click & Join More Deals</a></b>"
 
 
 def promo_markup():
