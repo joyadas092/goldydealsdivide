@@ -61,7 +61,7 @@ logger.setLevel(logging.INFO)
 source_channel_id = [-1002365489797]  # Replace with the source channel ID
 amazon_id = -1002385099278
 flipkart_id = -1003066292672
-meesho_id = -1002466670728
+meesho_id = -1003902447246
 ajiomyntra_id = -1003928380634
 zepto_id = -1003059572977
 # cc_id = -1002078634799
