@@ -102,7 +102,7 @@ keyword_to_chat_id = {
 BANNER_MESSAGES = {
     -1002049093974: "🔥Search @LootsVault ❤️‍🔥",  # Replace with actual channel ID
     -1002347373294: "💥 Search @LootsVault💥",
-    -1002466670728: "🛍️ Search  @LootsVault 🛍️",
+    -1003902447246: "🛍️ Search  @LootsVault 🛍️",
     -1002410844336: " 👗 Search @LootsVault 😉"
 }
 # =========================
@@ -124,10 +124,10 @@ PROMO_KEYBOARD = InlineKeyboardMarkup(
 PROMO_FOOTER = "\n\n<b>🛍️ 👉 <a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click HERE & Join All Deals</a> 👈</b>"
 
 BUDGET_PROMO_KEYBOARD = InlineKeyboardMarkup(
-    [[InlineKeyboardButton("🏠 Join Premium Offers", url="https://t.me/+vUHFBOFLHd02MTZl")]]
+    [[InlineKeyboardButton("🏠 Join Secret Deals", url="https://t.me/+vUHFBOFLHd02MTZl")]]
 )
 
-BUDGET_PROMO_FOOTER = "\n\n<b>🛍️ 👉 <a href='https://t.me/addlist/to3g-CQrRV4yNGRl'>Click & Join More Deals</a></b>"
+BUDGET_PROMO_FOOTER = "\n\n<b>🛍️ 👉 <a href='https://t.me/addlist/3G8HfhX3WSEwNmI1'>Click & Join More Deals</a></b>"
 
 
 def promo_markup():
@@ -984,7 +984,7 @@ CHANNEL_USERNAMES = [
     "@All_fkrt_deals",       # meesho_id
     "@myntr_ajiio_Deals",         # ajiomyntra_i
     "@Dealsunder149",
-     "@shopsi_meeso_deals"
+     "@shopsi_meeso_offers"
   # BUDGET_CHANNEL_ID
     # source channel and private_channel — add usernames if they have one
     # None entries are skipped automatically
