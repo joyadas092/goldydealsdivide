@@ -634,13 +634,11 @@ async def send(id, message,processed):
             for url in urls:
                 Newtext = Newtext.replace(url, f'<b><a href={url}>Buy Now</a></b>')
             await app.send_message(chat_id=id,
-                                   text=f'<b>{Newtext}</b>' + promo_footer(),
-                                   reply_markup=promo_markup(),
+                                   text=f'<b>{Newtext}</b>',
                                    disable_web_page_preview=True, disable_notification=not notify)
         else:
             await app.send_message(chat_id=id,
-                                   text=f'<b>{modifiedtxt}</b>' + promo_footer(),
-                                   reply_markup=promo_markup(),
+                                   text=f'<b>{modifiedtxt}</b>',
                                    disable_web_page_preview=True, disable_notification=not notify)
 
 def extract_price_regex(text: str):
