@@ -36,7 +36,7 @@ load_dotenv()
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 bot_token = os.getenv("BOT_TOKEN")
-apitoken=os.getenv('EARNKARO_API_TOKEN')
+apitoken = os.getenv('EARNKARO_API_TOKEN')
 # AI providers: Groq first (free tier), OpenAI as paid fallback.
 groq_api_key = os.getenv("GROQ_API_KEY")
 groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
@@ -70,11 +70,13 @@ private_channel = [-1002803694251]
 
 BUDGET_CHANNEL_ID = -1003898460377
 
-zepto_keywords=['jiomart','Amazon Fresh','blinkit','zepto','swiggy','bigbasket','Instamart','Flipkart minutes','instamart','Blinkit',
-                'Zepto','Swiggy','flipkart minutes','minutes loot','ONDC','Zomato','Blinkit']
-amazon_keywords = ['amzn', 'amazon', 'tinyurl','amazn']
-flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt','fkart']
-meesho_keywords = ['meesho', 'shopsy', 'msho','lehlah']
+zepto_keywords = ['jiomart', 'Amazon Fresh', 'blinkit', 'zepto', 'swiggy', 'bigbasket', 'Instamart', 'Flipkart minutes',
+                  'instamart', 'Blinkit',
+                  'Zepto', 'Swiggy', 'flipkart minutes', 'minutes loot', 'ONDC', 'Zomato', 'Blinkit']
+amazon_keywords = ['amzn', 'amazon', 'tinyurl', 'amazn']
+flipkart_keywords = ['fkrt', 'flipkart', 'boat', 'croma', 'tatacliq', 'fktr', 'Boat', 'Tatacliq', 'noise', 'firebolt',
+                     'fkart']
+meesho_keywords = ['meesho', 'shopsy', 'msho', 'lehlah']
 ajio_keywords = ['ajiio', 'myntr', 'xyxx', 'ajio', 'myntra', 'mamaearth', 'bombayshavingcompany', 'beardo', 'Beardo',
                  'Tresemme', 'themancompany', 'wow', 'nykaa',
                  'mCaffeine', 'mcaffeine', 'Bombay Shaving Company', 'BSC', 'TMC', 'foxtale',
@@ -89,10 +91,11 @@ ajio_keywords = ['ajiio', 'myntr', 'xyxx', 'ajio', 'myntra', 'mamaearth', 'bomba
 #                'ELIGIBILITY', 'Myzone', 'Rupay', 'rupay', 'Complimentary', 'Apply from here', 'annual fee',
 #                'Annual fee', 'joining fee']
 
-shortnerfound = ['extp', 'bitli', 'bit.ly', 'bitly', 'bitili', 'biti','wishlink','bittli','cutt.ly','bilty','cuttli','bilty.co','bttly']
+shortnerfound = ['extp', 'bitli', 'bit.ly', 'bitly', 'bitili', 'biti', 'wishlink', 'bittli', 'cutt.ly', 'bilty',
+                 'cuttli', 'bilty.co', 'bttly']
 
 # tuple(amazon_keywords): amazon_id,
-    # tuple(zepto_keywords):zepto_id,
+# tuple(zepto_keywords):zepto_id,
 keyword_to_chat_id = {
     tuple(amazon_keywords): amazon_id,
     tuple(flipkart_keywords): flipkart_id,
@@ -108,13 +111,14 @@ BANNER_MESSAGES = {
 # =========================
 # 📌 Silent Control
 # =========================
-silent_interval = 3   # Default: notify every 2nd post
-post_counter = {}     # Track posts per target channel
+silent_interval = 3  # Default: notify every 2nd post
+post_counter = {}  # Track posts per target channel
 
 # =========================
 # 📢 Promo Control
 # =========================
 promo_enabled = False  # Toggled by /promo_on and /promo_off
+ai_enabled = True     # Toggled by /ai_on and /ai_off
 
 PROMO_KEYBOARD = InlineKeyboardMarkup(
     [[InlineKeyboardButton("🔴 Loot All Deals", url="https://t.me/Loots_Vault/6"),
@@ -148,6 +152,7 @@ def budget_promo_markup():
 def budget_promo_footer():
     """Budget-channel join footer when promo is on, else empty string."""
     return BUDGET_PROMO_FOOTER if promo_enabled else ""
+
 
 def extract_link_from_text(text):
     # Regular expression pattern to match a URL
@@ -424,6 +429,7 @@ def compilehyperlink(message):
         inputvalue = (inputvalue.split("😱 Deal Time")[0]).strip()
     return inputvalue
 
+
 def make_16_9_with_padding(file_bytes, target_width=1280, target_height=720):
     file_bytes.seek(0)
     img = Image.open(file_bytes).convert("RGB")
@@ -452,6 +458,8 @@ def make_16_9_with_padding(file_bytes, target_width=1280, target_height=720):
     output.seek(0)
 
     return output
+
+
 def should_notify(chat_id: int) -> bool:
     """Return True if this post should notify, False if silent."""
     global post_counter, silent_interval
@@ -459,6 +467,7 @@ def should_notify(chat_id: int) -> bool:
         post_counter[chat_id] = 0
     post_counter[chat_id] += 1
     return post_counter[chat_id] % silent_interval == 0
+
 
 def should_block_message(text: str) -> bool:
     """
@@ -548,6 +557,8 @@ def clean_ai_caption(text):
 def rewrite_deal_text_sync(text):
     if not text or not ai_providers():
         return text
+    if not ai_enabled:
+        return text
 
     urls = extract_link_from_text2(text)
     system_prompt = (
@@ -580,14 +591,14 @@ async def rewrite_child_deal_text(text):
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, rewrite_deal_text_sync, text)
 
-async def send(id, message,processed):
 
+async def send(id, message, processed):
     text2 = message.caption if message.caption else message.text
     if should_block_message(text2):
-        await app.send_message(chat_id=5886397642,text='Just Blocked a Promo')
+        await app.send_message(chat_id=5886397642, text='Just Blocked a Promo')
         return
 
-    notify = should_notify(id)   # ✅ Added line
+    notify = should_notify(id)  # ✅ Added line
 
     if message.photo:
         try:
@@ -640,6 +651,7 @@ async def send(id, message,processed):
             await app.send_message(chat_id=id,
                                    text=f'<b>{modifiedtxt}</b>',
                                    disable_web_page_preview=True, disable_notification=not notify)
+
 
 def extract_price_regex(text: str):
     if not text:
@@ -713,6 +725,7 @@ async def hello():
 async def start(client, message):
     await app.send_message(message.chat.id, "ahaann")
 
+
 @app.on_message(filters.regex("silent_") & filters.user(5886397642))
 async def set_silent_interval(client, message):
     global silent_interval
@@ -744,6 +757,26 @@ async def promo_status(client, message):
     await message.reply_text(f"Promo is currently {'ON ✅' if promo_enabled else 'OFF 🚫'}")
 
 
+################AI caption on off#############################################################
+@app.on_message(filters.command('ai_on') & filters.user(5886397642))
+async def ai_on(client, message):
+    global ai_enabled
+    ai_enabled = True
+    await message.reply_text("🤖 AI Caption ON — captions will be rewritten by AI.")
+
+
+@app.on_message(filters.command('ai_off') & filters.user(5886397642))
+async def ai_off(client, message):
+    global ai_enabled
+    ai_enabled = False
+    await message.reply_text("🚫 AI Caption OFF — original captions will be used as-is.")
+
+
+@app.on_message(filters.command('ai_status') & filters.user(5886397642))
+async def ai_status(client, message):
+    await message.reply_text(f"🤖 AI Caption is currently {'ON ✅' if ai_enabled else 'OFF 🚫'}")
+
+
 ################forward on off#################################################################
 global forward
 forward = True
@@ -772,6 +805,7 @@ async def callback_query(app, CallbackQuery):
     elif CallbackQuery.data == 'forward on':
         await CallbackQuery.edit_message_text('Forward to Channel Status turned On', reply_markup=forward_off)
         forward = True
+
 
 async def send_budget_149(message, final_caption: str):
     if not BUDGET_CHANNEL_ID:
@@ -806,6 +840,8 @@ async def send_budget_149(message, final_caption: str):
 
 ########################################################################################
 last_processed_time = 0
+
+
 @app.on_message(filters.chat(source_channel_id))
 async def forward_message(client, message):
     global last_processed_time
@@ -813,15 +849,15 @@ async def forward_message(client, message):
 
     if current_time - last_processed_time < 5:  # 👈 adjust seconds
         print("⚠️ Blocked fast message:", message.id)
-        await app.send_message(chat_id=5886397642,text='Blocked fast messages')
+        await app.send_message(chat_id=5886397642, text='Blocked fast messages')
         return
-    
+
     last_processed_time = current_time
     if forward == True:
         inputvalue = ''
         processed = None
 
-    # Extract message text/caption first
+        # Extract message text/caption first
         if message.caption:
             inputvalue = message.caption
         elif message.text:
@@ -846,18 +882,18 @@ async def forward_message(client, message):
 
             try:
                 processed.seek(0)
-                await app.edit_message_media(chat_id=message.chat.id,message_id=message.id,
-                        media=InputMediaPhoto(
-                        media=processed,
-                        caption=message.caption
-                    )
-                    # reply_markup=InlineKeyboardMarkup(
-                    # [[InlineKeyboardButton(
-                    #     "🏠 Join LootsVault | Save Money 💰",
-                    #     url="https://t.me/addlist/3G8HfhX3WSEwNmI1"
-                    # )]]
-                    # )
-                )
+                await app.edit_message_media(chat_id=message.chat.id, message_id=message.id,
+                                             media=InputMediaPhoto(
+                                                 media=processed,
+                                                 caption=message.caption
+                                             )
+                                             # reply_markup=InlineKeyboardMarkup(
+                                             # [[InlineKeyboardButton(
+                                             #     "🏠 Join LootsVault | Save Money 💰",
+                                             #     url="https://t.me/addlist/3G8HfhX3WSEwNmI1"
+                                             # )]]
+                                             # )
+                                             )
             except Exception as e:
                 print(e)
 
@@ -886,7 +922,6 @@ async def forward_message(client, message):
         for keywords, chat_id in keyword_to_chat_id.items():
             if any(keyword in inputvalue for keyword in keywords):
                 await send(chat_id, message, processed)
-
 
 
 @app.on_message(filters.chat(private_channel))
@@ -975,18 +1010,21 @@ def ekconvert(text):
     # Extract the "data" part from the dictionary
     data_value = response_dict.get('data')
 
-    return(data_value)
+    return (data_value)
+
 
 CHANNEL_USERNAMES = [
-    "@all_amazn_deals",     # flipkart_id
-    "@All_fkrt_deals",       # meesho_id
-    "@myntr_ajiio_Deals",         # ajiomyntra_i
+    "@all_amazn_deals",  # flipkart_id
+    "@All_fkrt_deals",  # meesho_id
+    "@myntr_ajiio_Deals",  # ajiomyntra_i
     "@Dealsunder149",
-     "@shopsi_meeso_offers"
-  # BUDGET_CHANNEL_ID
+    "@shopsi_meeso_offers"
+    # BUDGET_CHANNEL_ID
     # source channel and private_channel — add usernames if they have one
     # None entries are skipped automatically
 ]
+
+
 # ⚠️ IMPORTANT: Replace the dummy usernames above with the real @usernames
 # of your channels. Get them from channel Info > Link > Public Link.
 # For private channels with no username, set to None.
@@ -1011,16 +1049,17 @@ async def resolve_peers():
     if failed:
         print(f"❌ Failed (wrong username or bot not admin): {failed}")
 
+
 @bot.before_serving
 async def before_serving():
     await app.start()
     await resolve_peers()
-    await app.send_message(chat_id= 5886397642, text='Bot starting')
+    await app.send_message(chat_id=5886397642, text='Bot starting')
 
 
 @bot.after_serving
 async def after_serving():
-    await app.send_message(chat_id= 5886397642, text='Bot Stopping')
+    await app.send_message(chat_id=5886397642, text='Bot Stopping')
     await app.stop()
 
 
