@@ -60,7 +60,7 @@ logger.setLevel(logging.INFO)
 
 source_channel_id = [-1002365489797]  # Replace with the source channel ID
 amazon_id = -1002385099278
-flipkart_id = -1003066292672
+flipkart_id = -1002803694251
 meesho_id = -1003902447246
 ajiomyntra_id = -1003928380634
 zepto_id = -1003059572977
@@ -1015,7 +1015,7 @@ def ekconvert(text):
 
 CHANNEL_USERNAMES = [
     "@all_amazn_deals",  # flipkart_id
-    "@All_fkrt_deals",  # meesho_id
+    "@All_fkrt_deal",  # meesho_id
     "@myntr_ajiio_Deals",  # ajiomyntra_i
     "@Dealsunder149",
     "@shopsi_meeso_offers"
